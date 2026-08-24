@@ -7,7 +7,6 @@ import { t } from '@/i18n';
 const SLIDES = [
   { title: 'onboarding.welcome_title', text: 'onboarding.welcome_text' },
   { title: 'onboarding.what_it_is_title', text: 'onboarding.what_it_is_text' },
-  { title: 'onboarding.what_it_is_not_title', text: 'onboarding.what_it_is_not_text' },
   { title: 'onboarding.privacy_title', text: 'onboarding.privacy_text' },
 ];
 

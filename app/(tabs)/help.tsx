@@ -1,6 +1,6 @@
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Body, Button, Card, Heading, Screen } from '@/components/base';
+import { Body, Button, Card, Heading, Label, Screen } from '@/components/base';
 import { Resources } from '@/components/Resources';
 import { t } from '@/i18n';
 
@@ -12,6 +12,8 @@ export default function Help() {
       <Heading className="py-2">{t('help.title')}</Heading>
 
       <Button label={t('help.need_now')} onPress={() => router.push('/care')} />
+
+      <Label>{t('help.not_treatment')}</Label>
 
       <Resources />
 

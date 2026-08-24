@@ -35,12 +35,9 @@ export default {
     what_it_is_title: 'Como funciona',
     what_it_is_text:
       'Três vezes por dia eu te faço seis perguntas rápidas. Leva vinte segundos. Quando a coisa apertar, eu te mostro o plano que você mesmo escreveu antes, com a cabeça fria.',
-    what_it_is_not_title: 'O que eu não faço',
-    what_it_is_not_text:
-      'Não bloqueio site nem app. Não sou médico e não substituo atendimento. E ninguém do outro lado fica lendo suas respostas em tempo real — nem eu, nem ninguém.',
     privacy_title: 'Ninguém sabe quem você é',
     privacy_text:
-      'Sem nome, sem e-mail, sem telefone. Sua conta é um número aleatório criado aqui no seu aparelho. Se quiser apagar tudo, é um botão.',
+      'Sem nome, sem e-mail, sem telefone. Sua conta é um número aleatório criado aqui no seu aparelho. Ninguém fica lendo suas respostas — nem eu, nem ninguém. Se quiser apagar tudo, é um botão.',
     goal_title: 'O que você quer?',
     goal_quit: 'Parar de apostar',
     goal_reduce: 'Apostar menos',
@@ -223,6 +220,8 @@ export default {
     selfexclusion_desc: 'Bloqueia seu CPF nas bets reguladas.',
     ga_name: 'Jogadores Anônimos',
     ga_desc: 'Grupos presenciais e online, em todo o Brasil.',
+    not_treatment:
+      'O Junto não é atendimento e não substitui profissional. Ele te dá uma mão no dia a dia; quem cuida de verdade são as pessoas aqui embaixo.',
     blockers_title: 'Bloquear sites e apps',
     blockers_desc:
       'O Junto não bloqueia nada — isso outros apps já fazem bem. Vale usar junto.',
