@@ -55,7 +55,9 @@ as not delivered.
 Testing this in Expo Go invalidates the result: the scheduling belongs to the
 Expo Go process, so "closing the app" closes the host with it and the test
 measures something else. Since SDK 53 expo-notifications also has functionality
-removed in Expo Go.
+removed in Expo Go — on Android the package cannot even be imported there, which
+is why `src/lib/notifications.ts` requires it lazily and no-ops in Expo Go. The
+app stays walkable; the notifications simply do not exist.
 
 **Use the preview APK.** A development build works for the scheduling itself,
 but it needs a Metro server on the same network to render anything — and the

@@ -1,7 +1,57 @@
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import type * as NotificationsModule from 'expo-notifications';
 import { DEFAULT_TIMES, withJitter, type TimeOfDay } from '@/domain/ema';
 import { t } from '@/i18n';
+
+/**
+ * Expo Go on Android cannot even *import* expo-notifications: since SDK 53 the
+ * package re-exports `DevicePushTokenAutoRegistration.fx`, which registers a
+ * push token listener at import time, and that listener throws inside Expo Go.
+ * A static import here takes the whole app down before the first screen.
+ *
+ * So the module is required lazily, only outside Expo Go, and every function
+ * below turns into a no-op when it is absent. Nothing is lost: scheduling in
+ * Expo Go is meaningless anyway, because the alarms would belong to Expo Go's
+ * process and die with it -- which is the whole reason Phase 0 needs a real
+ * build. See NOTIFICATIONS.md.
+ *
+ * Same shape as `hasCloud` in src/lib/supabase.ts: the app degrades instead of
+ * refusing to open.
+ */
+export const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+const Notifications: typeof NotificationsModule | null = inExpoGo
+  ? null
+  : require('expo-notifications');
+
+/** Banner, list and sound while the app is in the foreground. */
+export function setupForegroundHandler() {
+  if (!Notifications) return;
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
+
+export type NotificationTap = Record<string, string>;
+
+/**
+ * Tapping a notification is the main way into the EMA and the follow-up.
+ * Returns a remover, so the caller keeps its effect symmetric even in Expo Go,
+ * where there is nothing to remove.
+ */
+export function onNotificationTap(handle: (data: NotificationTap) => void): () => void {
+  if (!Notifications) return () => {};
+  const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+    handle(response.notification.request.content.data as NotificationTap);
+  });
+  return () => sub.remove();
+}
 
 export const EMA_CHANNEL = 'ema';
 export const FOLLOWUP_CHANNEL = 'followup';
@@ -22,7 +72,7 @@ export const SCHEDULED_DAYS = 21;
 const FOLLOWUP_MINUTES = 30;
 
 export async function prepareChannels() {
-  if (Platform.OS !== 'android') return;
+  if (!Notifications || Platform.OS !== 'android') return;
 
   await Notifications.setNotificationChannelAsync(EMA_CHANNEL, {
     name: 'Avaliações',
@@ -40,6 +90,7 @@ export async function prepareChannels() {
 }
 
 export async function requestPermission(): Promise<boolean> {
+  if (!Notifications) return false;
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
   const requested = await Notifications.requestPermissionsAsync();
@@ -55,6 +106,7 @@ export async function scheduleEmas(
   days = SCHEDULED_DAYS,
   now: Date = new Date()
 ): Promise<number> {
+  if (!Notifications) return 0;
   await cancelEmas();
   await prepareChannels();
 
@@ -87,6 +139,7 @@ export async function scheduleEmas(
 }
 
 export async function cancelEmas() {
+  if (!Notifications) return;
   const all = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     all
@@ -97,6 +150,7 @@ export async function cancelEmas() {
 
 /** "Did you manage?" 30 minutes after the intervention -- feeds the plan ranking. */
 export async function scheduleFollowUp(interventionId: string) {
+  if (!Notifications) return;
   await Notifications.scheduleNotificationAsync({
     identifier: `followup:${interventionId}`,
     content: {
@@ -112,11 +166,13 @@ export async function scheduleFollowUp(interventionId: string) {
 }
 
 export async function cancelFollowUp(interventionId: string) {
+  if (!Notifications) return;
   await Notifications.cancelScheduledNotificationAsync(`followup:${interventionId}`);
 }
 
 /** "Answer later" snoozes for an hour, once only (section 6.2). */
 export async function snoozeOneHour(scheduledFor: string) {
+  if (!Notifications) return;
   await Notifications.scheduleNotificationAsync({
     identifier: `ema:snoozed:${scheduledFor}`,
     content: {

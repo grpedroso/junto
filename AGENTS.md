@@ -67,8 +67,14 @@ npx expo export --platform android   # confirms the bundle closes
 
 ## Traps
 
-**Expo Go is no good for testing notifications.** Killing Expo Go kills the
-scheduling with it. Use a development build. See [NOTIFICATIONS.md](NOTIFICATIONS.md).
+**Expo Go is no good for testing notifications** — and on Android it cannot even
+*import* `expo-notifications`: the package re-exports a side-effect module that
+registers a push token listener at import time, and that listener throws inside
+Expo Go. So never import it from a screen. `src/lib/notifications.ts` requires it
+lazily, outside Expo Go only, and every function there no-ops without it — that
+is what keeps the screens walkable in Expo Go. Scheduling still needs a real
+build: killing Expo Go kills the alarms with it. See
+[NOTIFICATIONS.md](NOTIFICATIONS.md).
 
 **Jitter requires a concrete date.** Android's daily trigger is a fixed hour, so
 `scheduleEmas` schedules 21 days of concrete dates and reschedules on every open

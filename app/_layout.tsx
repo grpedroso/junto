@@ -4,20 +4,19 @@ import { useEffect } from 'react';
 import { ActivityIndicator, AppState, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import * as Notifications from 'expo-notifications';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useJunto } from '@/state/useJunto';
 import { flush } from '@/lib/storage';
-import { prepareChannels } from '@/lib/notifications';
+import {
+  onNotificationTap,
+  prepareChannels,
+  setupForegroundHandler,
+} from '@/lib/notifications';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// Everything that touches expo-notifications goes through src/lib/notifications
+// on purpose: importing the package directly crashes the app in Expo Go. See the
+// note at the top of that file.
+setupForegroundHandler();
 
 export default function RootLayout() {
   const router = useRouter();
@@ -39,20 +38,20 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-  useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as Record<string, string>;
-      if (data?.kind === 'ema') {
-        router.push({ pathname: '/ema', params: { scheduledFor: data.scheduledFor ?? '' } });
-      } else if (data?.kind === 'followup' && data.interventionId) {
-        router.push({
-          pathname: '/intervention/[id]',
-          params: { id: data.interventionId, followup: '1' },
-        });
-      }
-    });
-    return () => sub.remove();
-  }, [router]);
+  useEffect(
+    () =>
+      onNotificationTap((data) => {
+        if (data?.kind === 'ema') {
+          router.push({ pathname: '/ema', params: { scheduledFor: data.scheduledFor ?? '' } });
+        } else if (data?.kind === 'followup' && data.interventionId) {
+          router.push({
+            pathname: '/intervention/[id]',
+            params: { id: data.interventionId, followup: '1' },
+          });
+        }
+      }),
+    [router]
+  );
 
   // Only the way in is automatic. The way back out is done by the end of the
   // onboarding, because those screens get reused later -- the 30-day PGSI comes
