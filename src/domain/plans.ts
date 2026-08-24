@@ -1,62 +1,74 @@
-import type { CategoriaPlano, Gatilho, Plano } from './tipos';
+import type { Plan, PlanCategory, Trigger } from './types';
 
 /**
- * Planos de enfrentamento no formato "Quando X, eu vou Y"
- * (implementation intentions). Criados em momento calmo, nunca durante a crise.
+ * Coping plans in the "When X, I will Y" form (implementation intentions).
+ * Written in a calm moment, never during a crisis.
  *
- * Substituicao vem primeiro porque foi a categoria mais escolhida por usuarios
- * reais no Gambling Habit Hacker (DOI 10.1186/s13722-025-00573-y).
+ * Substitution comes first because it was the category real users picked most
+ * in the Gambling Habit Hacker trial (DOI 10.1186/s13722-025-00573-y).
  *
- * O texto de cada um mora em src/i18n/pt-BR.ts -- aqui fica so a estrutura.
+ * The wording of each one lives in src/i18n/pt-BR.ts -- only structure here.
  */
-export type ModeloPlano = {
+export type PlanTemplate = {
   id: string;
-  categoria: CategoriaPlano;
-  gatilhos: Gatilho[];
+  category: PlanCategory;
+  triggers: Trigger[];
 };
 
-export const BIBLIOTECA: ModeloPlano[] = [
-  { id: 'banho_gelado', categoria: 'substituicao', gatilhos: ['tedio', 'nada'] },
-  { id: 'caminhar_10min', categoria: 'substituicao', gatilhos: ['tedio', 'briga_estresse', 'nada'] },
-  { id: 'lavar_louca', categoria: 'substituicao', gatilhos: ['tedio', 'nada'] },
-  { id: 'jogo_no_radio', categoria: 'substituicao', gatilhos: ['jogo_passando'] },
-  { id: 'mandar_mensagem', categoria: 'social', gatilhos: ['nada', 'tedio', 'briga_estresse'] },
-  { id: 'ligar_de_noite', categoria: 'social', gatilhos: ['tedio', 'nada'] },
-  { id: 'flexoes', categoria: 'fisico', gatilhos: ['briga_estresse', 'nada'] },
-  { id: 'respiracao_478', categoria: 'fisico', gatilhos: ['briga_estresse', 'nada'] },
-  { id: 'lembrar_ultima_vez', categoria: 'cognitivo', gatilhos: ['dinheiro_apertado', 'nada'] },
-  { id: 'esperar_15min', categoria: 'cognitivo', gatilhos: ['nada', 'propaganda', 'amigos_apostando'] },
-  { id: 'bloquear_remetente', categoria: 'ambiental', gatilhos: ['propaganda'] },
-  { id: 'separar_contas', categoria: 'ambiental', gatilhos: ['dinheiro_apertado'] },
+export const LIBRARY: PlanTemplate[] = [
+  { id: 'cold_shower', category: 'substitution', triggers: ['boredom', 'nothing'] },
+  {
+    id: 'walk_10min',
+    category: 'substitution',
+    triggers: ['boredom', 'conflict_stress', 'nothing'],
+  },
+  { id: 'wash_dishes', category: 'substitution', triggers: ['boredom', 'nothing'] },
+  { id: 'game_on_radio', category: 'substitution', triggers: ['game_on'] },
+  {
+    id: 'text_someone',
+    category: 'social',
+    triggers: ['nothing', 'boredom', 'conflict_stress'],
+  },
+  { id: 'call_at_night', category: 'social', triggers: ['boredom', 'nothing'] },
+  { id: 'pushups', category: 'physical', triggers: ['conflict_stress', 'nothing'] },
+  { id: 'breathing_478', category: 'physical', triggers: ['conflict_stress', 'nothing'] },
+  { id: 'recall_last_time', category: 'cognitive', triggers: ['money_tight', 'nothing'] },
+  {
+    id: 'wait_15min',
+    category: 'cognitive',
+    triggers: ['nothing', 'ads', 'friends_betting'],
+  },
+  { id: 'block_sender', category: 'environmental', triggers: ['ads'] },
+  { id: 'set_aside_bills', category: 'environmental', triggers: ['money_tight'] },
 ];
 
-export const MINIMO_DE_PLANOS = 2;
+export const MINIMUM_PLANS = 2;
 
 /**
- * Eficacia com suavizacao de Laplace: um plano nunca mostrado vale 0.5, entao
- * nao perde de cara para um que funcionou 1 de 1. Com poucos dados -- que e o
- * caso sempre no inicio -- a razao crua e ruido.
+ * Effectiveness with Laplace smoothing: a plan never shown scores 0.5, so it
+ * does not lose outright to one that worked 1 out of 1. With little data --
+ * always the case early on -- the raw ratio is noise.
  */
-export function eficacia(p: Pick<Plano, 'vezesMostrado' | 'vezesFuncionou'>): number {
-  return (p.vezesFuncionou + 1) / (p.vezesMostrado + 2);
+export function effectiveness(p: Pick<Plan, 'timesShown' | 'timesWorked'>): number {
+  return (p.timesWorked + 1) / (p.timesShown + 2);
 }
 
-const melhor = (planos: Plano[]): Plano | null =>
-  planos.length === 0
+const best = (plans: Plan[]): Plan | null =>
+  plans.length === 0
     ? null
-    : [...planos].sort(
-        (a, b) => eficacia(b) - eficacia(a) || a.vezesMostrado - b.vezesMostrado
+    : [...plans].sort(
+        (a, b) => effectiveness(b) - effectiveness(a) || a.timesShown - b.timesShown
       )[0];
 
 /**
- * Mostra o plano que a propria pessoa criou para aquele gatilho. Se nao houver
- * plano para o gatilho, mostra o mais eficaz dela ate agora (secao 6.4).
+ * Shows the plan the person wrote for that trigger. With no plan for it, shows
+ * their most effective one so far (section 6.4).
  *
- * `gatilhos` vazio acontece quando a intervencao vem do SOS, fora do ciclo das
- * EMAs: nao ha resposta, entao nao ha gatilho declarado.
+ * An empty `triggers` happens when the intervention comes from SOS, outside the
+ * EMA cycle: there is no answer, so no declared trigger.
  */
-export function escolherPlano(planos: Plano[], gatilhos: Gatilho[] = []): Plano | null {
-  const relevantes: Gatilho[] = gatilhos.filter((g) => g !== 'nada');
-  const casaram = planos.filter((p) => p.gatilhos.some((g) => relevantes.includes(g)));
-  return melhor(casaram) ?? melhor(planos);
+export function pickPlan(plans: Plan[], triggers: Trigger[] = []): Plan | null {
+  const relevant: Trigger[] = triggers.filter((t) => t !== 'nothing');
+  const matched = plans.filter((p) => p.triggers.some((t) => relevant.includes(t)));
+  return best(matched) ?? best(plans);
 }

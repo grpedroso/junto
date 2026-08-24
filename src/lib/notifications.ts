@@ -1,29 +1,30 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { comJitter, HORARIOS_PADRAO, type Horario } from '@/domain/ema';
+import { DEFAULT_TIMES, withJitter, type TimeOfDay } from '@/domain/ema';
 import { t } from '@/i18n';
 
-export const CANAL_EMA = 'ema';
-export const CANAL_FOLLOWUP = 'followup';
+export const EMA_CHANNEL = 'ema';
+export const FOLLOWUP_CHANNEL = 'followup';
 
 /**
- * Quantos dias de EMA ficam agendados por vez.
+ * How many days of EMAs stay scheduled at a time.
  *
- * O jitter de +-30min exige data concreta -- o gatilho diario do Android e
- * hora fixa, sem variacao. O preco e que o agendamento acaba se o app nunca
- * mais for aberto. 21 dias significa ignorar 63 notificacoes seguidas antes de
- * o app emudecer; quem responde qualquer uma delas renova a janela inteira.
+ * The +-30min jitter requires a concrete date -- Android's daily trigger is a
+ * fixed hour, with no variation. The price is that scheduling runs out if the
+ * app is never opened again. 21 days means ignoring 63 notifications in a row
+ * before the app goes silent; answering any one of them renews the whole
+ * window.
  *
- * Conferir com o resultado da Fase 0 antes de mexer -- ver NOTIFICATIONS.md.
+ * Check against the Phase 0 result before changing -- see NOTIFICATIONS.md.
  */
-export const DIAS_AGENDADOS = 21;
+export const SCHEDULED_DAYS = 21;
 
-const MINUTOS_FOLLOWUP = 30;
+const FOLLOWUP_MINUTES = 30;
 
-export async function prepararCanais() {
+export async function prepareChannels() {
   if (Platform.OS !== 'android') return;
 
-  await Notifications.setNotificationChannelAsync(CANAL_EMA, {
+  await Notifications.setNotificationChannelAsync(EMA_CHANNEL, {
     name: 'Avaliações',
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
@@ -31,102 +32,102 @@ export async function prepararCanais() {
     sound: 'default',
   });
 
-  await Notifications.setNotificationChannelAsync(CANAL_FOLLOWUP, {
+  await Notifications.setNotificationChannelAsync(FOLLOWUP_CHANNEL, {
     name: 'Follow-up',
     importance: Notifications.AndroidImportance.DEFAULT,
     lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
   });
 }
 
-export async function pedirPermissao(): Promise<boolean> {
-  const atual = await Notifications.getPermissionsAsync();
-  if (atual.granted) return true;
-  const pedida = await Notifications.requestPermissionsAsync();
-  return pedida.granted;
+export async function requestPermission(): Promise<boolean> {
+  const current = await Notifications.getPermissionsAsync();
+  if (current.granted) return true;
+  const requested = await Notifications.requestPermissionsAsync();
+  return requested.granted;
 }
 
 /**
- * Reagenda a janela inteira. Cancelar antes evita duplicata quando o app e
- * aberto varias vezes no mesmo dia.
+ * Reschedules the whole window. Cancelling first avoids duplicates when the app
+ * is opened several times in the same day.
  */
-export async function agendarEmas(
-  horarios: readonly Horario[] = HORARIOS_PADRAO,
-  dias = DIAS_AGENDADOS,
-  agora: Date = new Date()
+export async function scheduleEmas(
+  times: readonly TimeOfDay[] = DEFAULT_TIMES,
+  days = SCHEDULED_DAYS,
+  now: Date = new Date()
 ): Promise<number> {
-  await cancelarEmas();
-  await prepararCanais();
+  await cancelEmas();
+  await prepareChannels();
 
-  let agendadas = 0;
-  for (let d = 0; d < dias; d++) {
-    for (const base of horarios) {
-      const { hora, minuto } = comJitter(base);
-      const quando = new Date(agora);
-      quando.setDate(quando.getDate() + d);
-      quando.setHours(hora, minuto, 0, 0);
-      if (quando <= agora) continue;
+  let scheduled = 0;
+  for (let d = 0; d < days; d++) {
+    for (const base of times) {
+      const { hour, minute } = withJitter(base);
+      const when = new Date(now);
+      when.setDate(when.getDate() + d);
+      when.setHours(hour, minute, 0, 0);
+      if (when <= now) continue;
 
       await Notifications.scheduleNotificationAsync({
-        identifier: `ema:${quando.toISOString()}`,
+        identifier: `ema:${when.toISOString()}`,
         content: {
-          title: t('ema.notificacao_titulo'),
-          body: t('ema.notificacao_corpo'),
-          data: { tipo: 'ema', agendadaPara: quando.toISOString() },
+          title: t('ema.notification_title'),
+          body: t('ema.notification_body'),
+          data: { kind: 'ema', scheduledFor: when.toISOString() },
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: quando,
-          channelId: CANAL_EMA,
+          date: when,
+          channelId: EMA_CHANNEL,
         },
       });
-      agendadas++;
+      scheduled++;
     }
   }
-  return agendadas;
+  return scheduled;
 }
 
-export async function cancelarEmas() {
-  const todas = await Notifications.getAllScheduledNotificationsAsync();
+export async function cancelEmas() {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
-    todas
+    all
       .filter((n) => n.identifier.startsWith('ema:'))
       .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier))
   );
 }
 
-/** "Conseguiu?" 30 minutos depois da intervencao -- alimenta o ranking dos planos. */
-export async function agendarFollowUp(intervencaoId: string) {
+/** "Did you manage?" 30 minutes after the intervention -- feeds the plan ranking. */
+export async function scheduleFollowUp(interventionId: string) {
   await Notifications.scheduleNotificationAsync({
-    identifier: `followup:${intervencaoId}`,
+    identifier: `followup:${interventionId}`,
     content: {
-      title: t('intervencao.followup_notificacao'),
-      data: { tipo: 'followup', intervencaoId },
+      title: t('intervention.followup_notification'),
+      data: { kind: 'followup', interventionId },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: MINUTOS_FOLLOWUP * 60,
-      channelId: CANAL_FOLLOWUP,
+      seconds: FOLLOWUP_MINUTES * 60,
+      channelId: FOLLOWUP_CHANNEL,
     },
   });
 }
 
-export async function cancelarFollowUp(intervencaoId: string) {
-  await Notifications.cancelScheduledNotificationAsync(`followup:${intervencaoId}`);
+export async function cancelFollowUp(interventionId: string) {
+  await Notifications.cancelScheduledNotificationAsync(`followup:${interventionId}`);
 }
 
-/** "Responder depois" adia uma hora, uma vez so (secao 6.2). */
-export async function adiarUmaHora(agendadaPara: string) {
+/** "Answer later" snoozes for an hour, once only (section 6.2). */
+export async function snoozeOneHour(scheduledFor: string) {
   await Notifications.scheduleNotificationAsync({
-    identifier: `ema:adiada:${agendadaPara}`,
+    identifier: `ema:snoozed:${scheduledFor}`,
     content: {
-      title: t('ema.notificacao_titulo'),
-      body: t('ema.notificacao_corpo'),
-      data: { tipo: 'ema', agendadaPara, adiada: true },
+      title: t('ema.notification_title'),
+      body: t('ema.notification_body'),
+      data: { kind: 'ema', scheduledFor, snoozed: true },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds: 3600,
-      channelId: CANAL_EMA,
+      channelId: EMA_CHANNEL,
     },
   });
 }

@@ -1,96 +1,96 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Botao, TelaFixa, Titulo } from '@/components/base';
-import { escolherPlano } from '@/domain/plans';
-import { useJunto } from '@/estado/useJunto';
+import { Button, FixedScreen, Heading } from '@/components/base';
+import { pickPlan } from '@/domain/plans';
+import { useJunto } from '@/state/useJunto';
 import { t } from '@/i18n';
 
 /**
- * Fora do ciclo das EMAs, sempre alcancavel, e funciona sem rede: os planos
- * estao no aparelho e os telefones da tela de ajuda sao fixos no codigo.
+ * Outside the EMA cycle, always reachable, and works with no network: the plans
+ * are on the device and the help screen's phone numbers are in the code.
  */
 export default function Sos() {
   const router = useRouter();
-  const planos = useJunto((e) => e.planos);
-  const criarIntervencao = useJunto((e) => e.criarIntervencao);
-  const [respirando, setRespirando] = useState(false);
+  const plans = useJunto((s) => s.plans);
+  const createIntervention = useJunto((s) => s.createIntervention);
+  const [breathing, setBreathing] = useState(false);
 
-  const abrirPlano = async () => {
-    const plano = escolherPlano(planos);
-    const intervencao = await criarIntervencao('sos', null, plano?.id ?? null);
-    router.replace({ pathname: '/intervencao/[id]', params: { id: intervencao.id } });
+  const openPlan = async () => {
+    const plan = pickPlan(plans);
+    const intervention = await createIntervention('sos', null, plan?.id ?? null);
+    router.replace({ pathname: '/intervention/[id]', params: { id: intervention.id } });
   };
 
-  if (respirando) return <Respiracao onSair={() => setRespirando(false)} />;
+  if (breathing) return <Breathing onLeave={() => setBreathing(false)} />;
 
   return (
-    <TelaFixa>
+    <FixedScreen>
       <View className="flex-1 justify-center gap-3">
-        <Titulo className="text-4xl">{t('sos.titulo')}</Titulo>
-        <Text className="text-lg text-tinta-suave">{t('sos.subtitulo')}</Text>
+        <Heading className="text-4xl">{t('sos.title')}</Heading>
+        <Text className="text-lg text-tinta-suave">{t('sos.subtitle')}</Text>
       </View>
 
       <View className="gap-3">
-        <Botao titulo={t('sos.meus_planos')} onPress={abrirPlano} />
-        <Botao
-          titulo={t('sos.respiracao')}
-          variante="secundario"
-          onPress={() => setRespirando(true)}
+        <Button label={t('sos.my_plans')} onPress={openPlan} />
+        <Button
+          label={t('sos.breathing')}
+          variant="secondary"
+          onPress={() => setBreathing(true)}
         />
-        <Botao
-          titulo={t('sos.falar_com_alguem')}
-          variante="secundario"
-          onPress={() => router.replace('/(tabs)/ajuda')}
+        <Button
+          label={t('sos.talk_to_someone')}
+          variant="secondary"
+          onPress={() => router.replace('/(tabs)/help')}
         />
-        <Botao titulo={t('comum.voltar')} variante="discreto" onPress={() => router.back()} />
+        <Button label={t('common.back')} variant="quiet" onPress={() => router.back()} />
       </View>
-    </TelaFixa>
+    </FixedScreen>
   );
 }
 
-const CICLO = [
-  { chave: 'sos.respiracao_inspira', segundos: 4, escala: 1.6 },
-  { chave: 'sos.respiracao_segura', segundos: 7, escala: 1.6 },
-  { chave: 'sos.respiracao_solta', segundos: 8, escala: 1 },
+const CYCLE = [
+  { key: 'sos.breathing_in', seconds: 4, scale: 1.6 },
+  { key: 'sos.breathing_hold', seconds: 7, scale: 1.6 },
+  { key: 'sos.breathing_out', seconds: 8, scale: 1 },
 ] as const;
 
-function Respiracao({ onSair }: { onSair: () => void }) {
-  const [fase, setFase] = useState(0);
-  const [resta, setResta] = useState<number>(CICLO[0].segundos);
-  const escala = useRef(new Animated.Value(1)).current;
-  const atual = CICLO[fase];
+function Breathing({ onLeave }: { onLeave: () => void }) {
+  const [phase, setPhase] = useState(0);
+  const [remaining, setRemaining] = useState<number>(CYCLE[0].seconds);
+  const scale = useRef(new Animated.Value(1)).current;
+  const current = CYCLE[phase];
 
   useEffect(() => {
-    Animated.timing(escala, {
-      toValue: atual.escala,
-      duration: atual.segundos * 1000,
+    Animated.timing(scale, {
+      toValue: current.scale,
+      duration: current.seconds * 1000,
       useNativeDriver: true,
     }).start();
 
-    setResta(atual.segundos);
-    const tique = setInterval(() => setResta((r) => r - 1), 1000);
-    const troca = setTimeout(() => setFase((f) => (f + 1) % CICLO.length), atual.segundos * 1000);
+    setRemaining(current.seconds);
+    const tick = setInterval(() => setRemaining((r) => r - 1), 1000);
+    const next = setTimeout(() => setPhase((p) => (p + 1) % CYCLE.length), current.seconds * 1000);
 
     return () => {
-      clearInterval(tique);
-      clearTimeout(troca);
+      clearInterval(tick);
+      clearTimeout(next);
     };
-  }, [fase, atual, escala]);
+  }, [phase, current, scale]);
 
   return (
-    <TelaFixa>
+    <FixedScreen>
       <View className="flex-1 items-center justify-center gap-10">
         <Animated.View
-          style={{ transform: [{ scale: escala }] }}
+          style={{ transform: [{ scale }] }}
           className="h-40 w-40 rounded-full bg-junto-claro"
         />
         <View className="items-center gap-1">
-          <Text className="text-2xl font-semibold text-tinta">{t(atual.chave)}</Text>
-          <Text className="text-5xl font-bold text-junto">{Math.max(resta, 0)}</Text>
+          <Text className="text-2xl font-semibold text-tinta">{t(current.key)}</Text>
+          <Text className="text-5xl font-bold text-junto">{Math.max(remaining, 0)}</Text>
         </View>
       </View>
-      <Botao titulo={t('comum.pronto')} onPress={onSair} />
-    </TelaFixa>
+      <Button label={t('common.done')} onPress={onLeave} />
+    </FixedScreen>
   );
 }

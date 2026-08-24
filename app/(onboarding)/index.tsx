@@ -1,32 +1,32 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Botao, Progresso, Tela, Texto, Titulo } from '@/components/base';
+import { Body, Button, Heading, Screen, Steps } from '@/components/base';
 import { t } from '@/i18n';
 
-const PASSOS = [
-  { titulo: 'onboarding.boas_vindas_titulo', texto: 'onboarding.boas_vindas_texto' },
-  { titulo: 'onboarding.o_que_e_titulo', texto: 'onboarding.o_que_e_texto' },
-  { titulo: 'onboarding.o_que_nao_e_titulo', texto: 'onboarding.o_que_nao_e_texto' },
-  { titulo: 'onboarding.privacidade_titulo', texto: 'onboarding.privacidade_texto' },
+const SLIDES = [
+  { title: 'onboarding.welcome_title', text: 'onboarding.welcome_text' },
+  { title: 'onboarding.what_it_is_title', text: 'onboarding.what_it_is_text' },
+  { title: 'onboarding.what_it_is_not_title', text: 'onboarding.what_it_is_not_text' },
+  { title: 'onboarding.privacy_title', text: 'onboarding.privacy_text' },
 ];
 
-export default function Apresentacao() {
+export default function Intro() {
   const router = useRouter();
-  const [passo, setPasso] = useState(0);
-  const atual = PASSOS[passo];
+  const [step, setStep] = useState(0);
+  const current = SLIDES[step];
 
-  const avancar = () =>
-    passo === PASSOS.length - 1 ? router.push('/(onboarding)/meta') : setPasso(passo + 1);
+  const advance = () =>
+    step === SLIDES.length - 1 ? router.push('/(onboarding)/goal') : setStep(step + 1);
 
   return (
-    <Tela>
-      <Progresso passo={passo} total={PASSOS.length} />
+    <Screen>
+      <Steps step={step} total={SLIDES.length} />
       <View className="flex-1 justify-center gap-4 py-16">
-        <Titulo className="text-4xl">{t(atual.titulo)}</Titulo>
-        <Texto className="text-lg">{t(atual.texto)}</Texto>
+        <Heading className="text-4xl">{t(current.title)}</Heading>
+        <Body className="text-lg">{t(current.text)}</Body>
       </View>
-      <Botao titulo={t('comum.continuar')} onPress={avancar} />
-    </Tela>
+      <Button label={t('common.continue')} onPress={advance} />
+    </Screen>
   );
 }

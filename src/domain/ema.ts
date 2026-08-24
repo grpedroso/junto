@@ -1,104 +1,108 @@
-import type { Humor, RespostaEma } from './tipos';
+import type { EmaAnswer, Mood } from './types';
 
 /**
- * Regra de disparo do MVP. Fixa e auditavel de proposito: da para explicar a
- * pessoa por que o app agiu. ML so na fase 3, quando houver dados.
+ * The MVP trigger rule. Fixed and auditable on purpose: it can be explained to
+ * the person, so the app can say why it acted.
  *
- * Craving e autoeficacia momentaneos sao os dois unicos preditores que a
- * literatura confirma operarem em tempo real (Dowling et al. 2023). Humor,
- * gatilho e contexto entram no dataset mas NAO disparam nada aqui.
+ * Momentary craving and self-efficacy are the only two predictors the
+ * literature confirms operate in real time (Dowling et al. 2023). Mood, trigger
+ * and context feed the dataset but decide NOTHING here.
  *
- * Mexer nestes numeros exige revisao clinica -- ver CONTRIBUTING.md.
+ * Changing these numbers requires clinical review -- see CONTRIBUTING.md.
  */
-export const LIMIAR = {
-  cravingAlto: 7,
-  autoeficaciaBaixa: 3,
-  cravingMedio: 5,
-  autoeficaciaMedia: 5,
+export const THRESHOLD = {
+  highCraving: 7,
+  lowSelfEfficacy: 3,
+  mediumCraving: 5,
+  mediumSelfEfficacy: 5,
 } as const;
 
-export const ESCALA = { min: 0, max: 10 } as const;
+export const SCALE = { min: 0, max: 10 } as const;
 
-export type MotivoDisparo = 'craving_alto' | 'autoeficacia_baixa' | 'combinado';
+export type TriggerReason = 'high_craving' | 'low_self_efficacy' | 'combined';
 
-export type Disparo =
-  | { dispara: true; motivo: MotivoDisparo }
-  | { dispara: false; motivo: null };
+export type TriggerDecision =
+  | { fires: true; reason: TriggerReason }
+  | { fires: false; reason: null };
 
-const naEscala = (n: number) =>
-  Number.isInteger(n) && n >= ESCALA.min && n <= ESCALA.max;
+const inScale = (n: number) => Number.isInteger(n) && n >= SCALE.min && n <= SCALE.max;
 
 /**
- * craving >= 7 OU autoeficacia <= 3 OU (craving >= 5 E autoeficacia <= 5)
+ * craving >= 7 OR selfEfficacy <= 3 OR (craving >= 5 AND selfEfficacy <= 5)
  *
- * A ordem dos testes define o motivo registrado quando mais de uma condicao
- * vale ao mesmo tempo: a mais especifica primeiro.
+ * Test order decides which reason gets recorded when more than one condition
+ * holds at once: most specific first.
  */
-export function avaliarDisparo(r: Pick<RespostaEma, 'craving' | 'autoeficacia'>): Disparo {
-  if (!naEscala(r.craving) || !naEscala(r.autoeficacia)) {
+export function evaluateTrigger(
+  answer: Pick<EmaAnswer, 'craving' | 'selfEfficacy'>
+): TriggerDecision {
+  if (!inScale(answer.craving) || !inScale(answer.selfEfficacy)) {
     throw new Error(
-      `resposta fora da escala ${ESCALA.min}-${ESCALA.max}: ` +
-        `craving=${r.craving}, autoeficacia=${r.autoeficacia}`
+      `answer outside the ${SCALE.min}-${SCALE.max} scale: ` +
+        `craving=${answer.craving}, selfEfficacy=${answer.selfEfficacy}`
     );
   }
 
-  if (r.craving >= LIMIAR.cravingAlto) {
-    return { dispara: true, motivo: 'craving_alto' };
+  if (answer.craving >= THRESHOLD.highCraving) {
+    return { fires: true, reason: 'high_craving' };
   }
-  if (r.autoeficacia <= LIMIAR.autoeficaciaBaixa) {
-    return { dispara: true, motivo: 'autoeficacia_baixa' };
+  if (answer.selfEfficacy <= THRESHOLD.lowSelfEfficacy) {
+    return { fires: true, reason: 'low_self_efficacy' };
   }
-  if (r.craving >= LIMIAR.cravingMedio && r.autoeficacia <= LIMIAR.autoeficaciaMedia) {
-    return { dispara: true, motivo: 'combinado' };
+  if (
+    answer.craving >= THRESHOLD.mediumCraving &&
+    answer.selfEfficacy <= THRESHOLD.mediumSelfEfficacy
+  ) {
+    return { fires: true, reason: 'combined' };
   }
-  return { dispara: false, motivo: null };
+  return { fires: false, reason: null };
 }
 
-export const HORARIOS_PADRAO = [
-  { hora: 11, minuto: 0 },
-  { hora: 17, minuto: 0 },
-  { hora: 21, minuto: 0 },
+export const DEFAULT_TIMES = [
+  { hour: 11, minute: 0 },
+  { hour: 17, minute: 0 },
+  { hour: 21, minute: 0 },
 ] as const;
 
-/** O jitter existe para a resposta nao virar automatica -- reflexao, nao reflexo. */
-export const JITTER_MINUTOS = 30;
+/** The jitter exists so answering never becomes automatic -- reflection, not reflex. */
+export const JITTER_MINUTES = 30;
 
-export type Horario = { hora: number; minuto: number };
+export type TimeOfDay = { hour: number; minute: number };
 
 /**
- * Sorteia um deslocamento inteiro em [-JITTER, +JITTER] minutos.
- * `sorteio` e injetavel para o teste ser deterministico.
+ * Draws an integer offset in [-JITTER, +JITTER] minutes.
+ * `random` is injectable so tests stay deterministic.
  */
-export function comJitter(
-  h: Horario,
-  jitter = JITTER_MINUTOS,
-  sorteio: () => number = Math.random
-): Horario {
-  const desloc = Math.round((sorteio() * 2 - 1) * jitter);
-  const total = (h.hora * 60 + h.minuto + desloc + 1440) % 1440;
-  return { hora: Math.floor(total / 60), minuto: total % 60 };
+export function withJitter(
+  time: TimeOfDay,
+  jitter = JITTER_MINUTES,
+  random: () => number = Math.random
+): TimeOfDay {
+  const offset = Math.round((random() * 2 - 1) * jitter);
+  const total = (time.hour * 60 + time.minute + offset + 1440) % 1440;
+  return { hour: Math.floor(total / 60), minute: total % 60 };
 }
 
-const HUMOR_NEGATIVO: Humor[] = ['triste', 'irritado'];
+const NEGATIVE_MOOD: Mood[] = ['sad', 'irritated'];
 
-/** Quantas EMAs seguidas pesadas antes de oferecer a tela de cuidado. */
-export const EMAS_PARA_CUIDADO = 3;
+/** How many heavy EMAs in a row before offering the care screen. */
+export const EMAS_FOR_CARE_SCREEN = 3;
 
 /**
- * Tela de cuidado da secao 9.1: humor negativo persistente junto de craving
- * alto. Le da mais recente para a mais antiga e exige uma sequencia sem furo.
+ * The care screen from section 9.1: persistent negative mood alongside high
+ * craving. Reads newest to oldest and requires an unbroken run.
  *
- * O app NAO faz triagem de risco suicida -- isto so decide se vale oferecer
- * uma rota para ajuda, sem alarme e sem diagnostico.
+ * The app does NOT screen for suicide risk -- this only decides whether it is
+ * worth offering a route to help, with no alarm and no diagnosis.
  *
- * TODO clinico: o limiar exato (3 EMAs, craving >= 7) precisa de revisao.
+ * CLINICAL TODO: the exact threshold (3 EMAs, craving >= 7) needs review.
  */
-export function precisaTelaDeCuidado(
-  ultimas: Pick<RespostaEma, 'craving' | 'humor'>[],
-  quantas = EMAS_PARA_CUIDADO
+export function needsCareScreen(
+  latest: Pick<EmaAnswer, 'craving' | 'mood'>[],
+  howMany = EMAS_FOR_CARE_SCREEN
 ): boolean {
-  if (ultimas.length < quantas) return false;
-  return ultimas
-    .slice(0, quantas)
-    .every((r) => HUMOR_NEGATIVO.includes(r.humor) && r.craving >= LIMIAR.cravingAlto);
+  if (latest.length < howMany) return false;
+  return latest
+    .slice(0, howMany)
+    .every((a) => NEGATIVE_MOOD.includes(a.mood) && a.craving >= THRESHOLD.highCraving);
 }

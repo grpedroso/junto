@@ -7,34 +7,35 @@ const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 /**
- * Sem projeto Supabase configurado o app roda em **modo local**: conta anonima
- * criada no proprio aparelho, nada sai dali. Serve para rodar e testar antes de
- * existir backend -- o app ja e offline-first, entao a nuvem so acrescenta
- * sincronizacao.
+ * With no Supabase project configured the app runs in **local mode**: the
+ * anonymous account is created on the device and nothing leaves it. That is
+ * enough to run and test before a backend exists -- the app is already
+ * offline-first, so the cloud only adds synchronisation.
  *
- * Lancar no import, como era antes, impedia o app de abrir: `garantirSessao`
- * tem try/catch, mas o modulo estoura antes de qualquer catch existir.
+ * Throwing at import time, as this did before, stopped the app from opening at
+ * all: `ensureSession` has a try/catch, but the module blew up before any catch
+ * existed.
  */
-export const temNuvem = Boolean(url && anonKey);
+export const hasCloud = Boolean(url && anonKey);
 
-if (!temNuvem) {
+if (!hasCloud) {
   console.warn(
-    '[junto] sem EXPO_PUBLIC_SUPABASE_URL/ANON_KEY -- rodando em modo local, ' +
-      'nada sincroniza. Copie o .env.example para .env quando tiver o projeto.'
+    '[junto] no EXPO_PUBLIC_SUPABASE_URL/ANON_KEY -- running in local mode, ' +
+      'nothing syncs. Copy .env.example to .env once the project exists.'
   );
 }
 
 /**
- * A anon key e publica por construcao -- ela vai dentro do APK. Quem protege os
- * dados e a RLS, nao o segredo da chave. Ver SECURITY.md.
+ * The anon key is public by design -- it ships inside the APK. What protects
+ * the data is RLS, not the secrecy of the key. See SECURITY.md.
  */
 export const supabase = createClient<Database>(
   url ?? 'http://localhost:54321',
-  anonKey ?? 'modo-local',
+  anonKey ?? 'local-mode',
   {
     auth: {
       storage: AsyncStorage,
-      autoRefreshToken: temNuvem,
+      autoRefreshToken: hasCloud,
       persistSession: true,
       detectSessionInUrl: false,
     },

@@ -1,79 +1,79 @@
 /**
- * PGSI -- Problem Gambling Severity Index. 9 itens, escala 0-3, referencia aos
- * ultimos 12 meses. Adaptacao transcultural brasileira publicada na Revista de
- * Saude Publica em 2026 (DOI 10.11606/s1518-8787.2026060007368).
+ * PGSI -- Problem Gambling Severity Index. 9 items, 0-3 scale, referring to the
+ * last 12 months. A Brazilian cross-cultural adaptation was published in Revista
+ * de Saude Publica in 2026 (DOI 10.11606/s1518-8787.2026060007368).
  *
- * NAO e ferramenta diagnostica -- foi criado para pesquisa populacional. O app
- * apresenta o resultado como "um retrato de onde voce esta", nunca como
- * diagnostico. Ver src/i18n/pt-BR.ts.
+ * It is NOT a diagnostic tool -- it was built for population research. The app
+ * presents the result as "a snapshot of where you are", never as a diagnosis.
+ * See src/i18n/pt-BR.ts.
  */
 
-export const PGSI_ITENS = [
-  'apostou_mais_que_podia',
-  'precisou_apostar_mais',
-  'voltou_para_recuperar',
-  'vendeu_ou_pediu_emprestado',
-  'sentiu_que_tem_problema',
-  'causou_problema_de_saude',
-  'foi_criticado',
-  'causou_problema_financeiro',
-  'sentiu_culpa',
+export const PGSI_ITEMS = [
+  'bet_more_than_afford',
+  'needed_larger_bets',
+  'chased_losses',
+  'borrowed_or_sold',
+  'felt_problem',
+  'health_problems',
+  'was_criticized',
+  'financial_problems',
+  'felt_guilty',
 ] as const;
 
-export type ItemPgsi = (typeof PGSI_ITENS)[number];
+export type PgsiItem = (typeof PGSI_ITEMS)[number];
 
-export const PGSI_OPCOES = [0, 1, 2, 3] as const;
-export const PGSI_MAX = PGSI_ITENS.length * 3;
+export const PGSI_OPTIONS = [0, 1, 2, 3] as const;
+export const PGSI_MAX = PGSI_ITEMS.length * 3;
 
-export type FaixaPgsi = 'sem_risco' | 'baixo' | 'moderado' | 'problematico';
+export type PgsiBand = 'none' | 'low' | 'moderate' | 'problem';
 
 /**
- * Existem dois conjuntos de cortes na literatura. O original de Ferris & Wynne
- * e o padrao aqui; o alternativo aparece em estudos posteriores.
+ * Two sets of cutoffs exist in the literature. Ferris & Wynne's original is the
+ * default here; the alternative appears in later studies.
  *
- * TODO clinico: confirmar com o revisor qual adotar antes de mostrar faixa a
- * qualquer usuario real. A diferenca move gente de "baixo" para "moderado".
+ * CLINICAL TODO: confirm with the reviewer which one to adopt before showing a
+ * band to any real user. The difference moves people from "low" to "moderate".
  */
-export type Cortes = 'ferris_wynne' | 'alternativo';
+export type Cutoffs = 'ferris_wynne' | 'alternative';
 
-const TABELA: Record<Cortes, { max: number; faixa: FaixaPgsi }[]> = {
+const TABLE: Record<Cutoffs, { max: number; band: PgsiBand }[]> = {
   ferris_wynne: [
-    { max: 0, faixa: 'sem_risco' },
-    { max: 2, faixa: 'baixo' },
-    { max: 7, faixa: 'moderado' },
-    { max: PGSI_MAX, faixa: 'problematico' },
+    { max: 0, band: 'none' },
+    { max: 2, band: 'low' },
+    { max: 7, band: 'moderate' },
+    { max: PGSI_MAX, band: 'problem' },
   ],
-  alternativo: [
-    { max: 0, faixa: 'sem_risco' },
-    { max: 4, faixa: 'baixo' },
-    { max: 7, faixa: 'moderado' },
-    { max: PGSI_MAX, faixa: 'problematico' },
+  alternative: [
+    { max: 0, band: 'none' },
+    { max: 4, band: 'low' },
+    { max: 7, band: 'moderate' },
+    { max: PGSI_MAX, band: 'problem' },
   ],
 };
 
-export type RespostasPgsi = Record<ItemPgsi, number>;
+export type PgsiAnswers = Record<PgsiItem, number>;
 
-export function calcularPgsi(respostas: RespostasPgsi): number {
-  return PGSI_ITENS.reduce((total, item) => {
-    const v = respostas[item];
+export function scorePgsi(answers: PgsiAnswers): number {
+  return PGSI_ITEMS.reduce((total, item) => {
+    const v = answers[item];
     if (!Number.isInteger(v) || v < 0 || v > 3) {
-      throw new Error(`item "${item}" fora da escala 0-3: ${v}`);
+      throw new Error(`item "${item}" outside the 0-3 scale: ${v}`);
     }
     return total + v;
   }, 0);
 }
 
-export function faixaPgsi(escore: number, cortes: Cortes = 'ferris_wynne'): FaixaPgsi {
-  if (!Number.isInteger(escore) || escore < 0 || escore > PGSI_MAX) {
-    throw new Error(`escore fora de 0-${PGSI_MAX}: ${escore}`);
+export function pgsiBand(score: number, cutoffs: Cutoffs = 'ferris_wynne'): PgsiBand {
+  if (!Number.isInteger(score) || score < 0 || score > PGSI_MAX) {
+    throw new Error(`score outside 0-${PGSI_MAX}: ${score}`);
   }
-  return TABELA[cortes].find((f) => escore <= f.max)!.faixa;
+  return TABLE[cutoffs].find((b) => score <= b.max)!.band;
 }
 
-/** O PGSI e reaplicado a cada 30 dias para medir evolucao. */
-export const DIAS_ENTRE_PGSI = 30;
+/** The PGSI is retaken every 30 days to measure change. */
+export const DAYS_BETWEEN_PGSI = 30;
 
-export function podeReaplicar(ultimoEm: Date, agora: Date = new Date()): boolean {
-  const dias = (agora.getTime() - ultimoEm.getTime()) / 86_400_000;
-  return dias >= DIAS_ENTRE_PGSI;
+export function canRetake(lastTakenAt: Date, now: Date = new Date()): boolean {
+  const days = (now.getTime() - lastTakenAt.getTime()) / 86_400_000;
+  return days >= DAYS_BETWEEN_PGSI;
 }

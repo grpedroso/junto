@@ -6,9 +6,9 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { useJunto } from '@/estado/useJunto';
-import { descarregar } from '@/lib/storage';
-import { prepararCanais } from '@/lib/notifications';
+import { useJunto } from '@/state/useJunto';
+import { flush } from '@/lib/storage';
+import { prepareChannels } from '@/lib/notifications';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -19,52 +19,52 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export default function LayoutRaiz() {
+export default function RootLayout() {
   const router = useRouter();
-  const segmentos = useSegments();
-  const carregando = useJunto((e) => e.carregando);
-  const perfil = useJunto((e) => e.perfil);
-  const iniciar = useJunto((e) => e.iniciar);
+  const segments = useSegments();
+  const loading = useJunto((s) => s.loading);
+  const profile = useJunto((s) => s.profile);
+  const start = useJunto((s) => s.start);
 
   useEffect(() => {
-    void iniciar();
-    void prepararCanais();
-  }, [iniciar]);
+    void start();
+    void prepareChannels();
+  }, [start]);
 
-  // Toda volta para o primeiro plano e uma chance de a fila offline esvaziar.
+  // Every return to the foreground is a chance for the offline queue to drain.
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (estado) => {
-      if (estado === 'active') void descarregar();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void flush();
     });
     return () => sub.remove();
   }, []);
 
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
-      const dados = r.notification.request.content.data as Record<string, string>;
-      if (dados?.tipo === 'ema') {
-        router.push({ pathname: '/ema', params: { agendadaPara: dados.agendadaPara ?? '' } });
-      } else if (dados?.tipo === 'followup' && dados.intervencaoId) {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as Record<string, string>;
+      if (data?.kind === 'ema') {
+        router.push({ pathname: '/ema', params: { scheduledFor: data.scheduledFor ?? '' } });
+      } else if (data?.kind === 'followup' && data.interventionId) {
         router.push({
-          pathname: '/intervencao/[id]',
-          params: { id: dados.intervencaoId, followup: '1' },
+          pathname: '/intervention/[id]',
+          params: { id: data.interventionId, followup: '1' },
         });
       }
     });
     return () => sub.remove();
   }, [router]);
 
-  // So o caminho de ida e automatico. A volta quem faz e o fim do onboarding,
-  // porque as telas de la sao reaproveitadas depois -- o PGSI de 30 dias entra
-  // por `/(onboarding)/pgsi` com o onboarding ja concluido.
+  // Only the way in is automatic. The way back out is done by the end of the
+  // onboarding, because those screens get reused later -- the 30-day PGSI comes
+  // in through `/(onboarding)/pgsi` with onboarding already finished.
   useEffect(() => {
-    if (carregando) return;
-    if (!perfil?.onboardingFeito && segmentos[0] !== '(onboarding)') {
+    if (loading) return;
+    if (!profile?.onboardingDone && segments[0] !== '(onboarding)') {
       router.replace('/(onboarding)');
     }
-  }, [carregando, perfil?.onboardingFeito, segmentos, router]);
+  }, [loading, profile?.onboardingDone, segments, router]);
 
-  if (carregando) {
+  if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-fundo">
         <ActivityIndicator color="#1F6F5C" />
@@ -79,10 +79,10 @@ export default function LayoutRaiz() {
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="ema" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="intervencao/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="intervention/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="sos" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="cuidado" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="ajustes" />
+        <Stack.Screen name="care" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="settings" />
       </Stack>
     </SafeAreaProvider>
   );

@@ -1,52 +1,52 @@
 import {
-  avaliarDisparo,
-  comJitter,
-  EMAS_PARA_CUIDADO,
-  LIMIAR,
-  precisaTelaDeCuidado,
+  EMAS_FOR_CARE_SCREEN,
+  evaluateTrigger,
+  needsCareScreen,
+  THRESHOLD,
+  withJitter,
 } from '../ema';
-import type { Humor } from '../tipos';
+import type { Mood } from '../types';
 
-describe('avaliarDisparo', () => {
-  it('dispara com craving no limiar exato', () => {
-    expect(avaliarDisparo({ craving: 7, autoeficacia: 10 })).toEqual({
-      dispara: true,
-      motivo: 'craving_alto',
+describe('evaluateTrigger', () => {
+  it('fires at the exact craving threshold', () => {
+    expect(evaluateTrigger({ craving: 7, selfEfficacy: 10 })).toEqual({
+      fires: true,
+      reason: 'high_craving',
     });
   });
 
-  it('nao dispara um ponto abaixo do craving alto, com autoeficacia boa', () => {
-    expect(avaliarDisparo({ craving: 6, autoeficacia: 6 })).toEqual({
-      dispara: false,
-      motivo: null,
+  it('does not fire one point below high craving with good self-efficacy', () => {
+    expect(evaluateTrigger({ craving: 6, selfEfficacy: 6 })).toEqual({
+      fires: false,
+      reason: null,
     });
   });
 
-  it('dispara com autoeficacia no limiar exato', () => {
-    expect(avaliarDisparo({ craving: 0, autoeficacia: 3 })).toEqual({
-      dispara: true,
-      motivo: 'autoeficacia_baixa',
+  it('fires at the exact self-efficacy threshold', () => {
+    expect(evaluateTrigger({ craving: 0, selfEfficacy: 3 })).toEqual({
+      fires: true,
+      reason: 'low_self_efficacy',
     });
   });
 
-  it('nao dispara um ponto acima da autoeficacia baixa, com craving baixo', () => {
-    expect(avaliarDisparo({ craving: 4, autoeficacia: 4 }).dispara).toBe(false);
+  it('does not fire one point above low self-efficacy with low craving', () => {
+    expect(evaluateTrigger({ craving: 4, selfEfficacy: 4 }).fires).toBe(false);
   });
 
-  it('dispara na combinacao dos dois medios', () => {
-    expect(avaliarDisparo({ craving: 5, autoeficacia: 5 })).toEqual({
-      dispara: true,
-      motivo: 'combinado',
+  it('fires on the combination of two middling values', () => {
+    expect(evaluateTrigger({ craving: 5, selfEfficacy: 5 })).toEqual({
+      fires: true,
+      reason: 'combined',
     });
   });
 
-  it('registra o motivo mais especifico quando mais de uma condicao vale', () => {
-    expect(avaliarDisparo({ craving: 9, autoeficacia: 1 }).motivo).toBe('craving_alto');
-    expect(avaliarDisparo({ craving: 6, autoeficacia: 2 }).motivo).toBe('autoeficacia_baixa');
+  it('records the most specific reason when several conditions hold', () => {
+    expect(evaluateTrigger({ craving: 9, selfEfficacy: 1 }).reason).toBe('high_craving');
+    expect(evaluateTrigger({ craving: 6, selfEfficacy: 2 }).reason).toBe('low_self_efficacy');
   });
 
-  it('nao dispara no caso tranquilo', () => {
-    expect(avaliarDisparo({ craving: 0, autoeficacia: 10 }).dispara).toBe(false);
+  it('does not fire on the calm case', () => {
+    expect(evaluateTrigger({ craving: 0, selfEfficacy: 10 }).fires).toBe(false);
   });
 
   it.each([
@@ -55,76 +55,76 @@ describe('avaliarDisparo', () => {
     [5, -1],
     [5, 11],
     [5.5, 5],
-  ])('recusa valor fora da escala (%p, %p)', (craving, autoeficacia) => {
-    expect(() => avaliarDisparo({ craving, autoeficacia })).toThrow(/escala/);
+  ])('rejects values outside the scale (%p, %p)', (craving, selfEfficacy) => {
+    expect(() => evaluateTrigger({ craving, selfEfficacy })).toThrow(/scale/);
   });
 
-  it('cobre a grade inteira sem buraco na regra', () => {
+  it('covers the whole grid with no gap in the rule', () => {
     for (let c = 0; c <= 10; c++) {
-      for (let a = 0; a <= 10; a++) {
-        const esperado =
-          c >= LIMIAR.cravingAlto ||
-          a <= LIMIAR.autoeficaciaBaixa ||
-          (c >= LIMIAR.cravingMedio && a <= LIMIAR.autoeficaciaMedia);
-        expect(avaliarDisparo({ craving: c, autoeficacia: a }).dispara).toBe(esperado);
+      for (let s = 0; s <= 10; s++) {
+        const expected =
+          c >= THRESHOLD.highCraving ||
+          s <= THRESHOLD.lowSelfEfficacy ||
+          (c >= THRESHOLD.mediumCraving && s <= THRESHOLD.mediumSelfEfficacy);
+        expect(evaluateTrigger({ craving: c, selfEfficacy: s }).fires).toBe(expected);
       }
     }
   });
 });
 
-describe('comJitter', () => {
-  it('nao desloca no meio do sorteio', () => {
-    expect(comJitter({ hora: 11, minuto: 0 }, 30, () => 0.5)).toEqual({ hora: 11, minuto: 0 });
+describe('withJitter', () => {
+  it('does not shift at the middle of the draw', () => {
+    expect(withJitter({ hour: 11, minute: 0 }, 30, () => 0.5)).toEqual({ hour: 11, minute: 0 });
   });
 
-  it('desloca ate meia hora para tras e para frente', () => {
-    expect(comJitter({ hora: 17, minuto: 0 }, 30, () => 0)).toEqual({ hora: 16, minuto: 30 });
-    expect(comJitter({ hora: 17, minuto: 0 }, 30, () => 1)).toEqual({ hora: 17, minuto: 30 });
+  it('shifts up to half an hour either way', () => {
+    expect(withJitter({ hour: 17, minute: 0 }, 30, () => 0)).toEqual({ hour: 16, minute: 30 });
+    expect(withJitter({ hour: 17, minute: 0 }, 30, () => 1)).toEqual({ hour: 17, minute: 30 });
   });
 
-  it('vira o dia sem estourar a hora', () => {
-    expect(comJitter({ hora: 0, minuto: 10 }, 30, () => 0)).toEqual({ hora: 23, minuto: 40 });
-    expect(comJitter({ hora: 23, minuto: 50 }, 30, () => 1)).toEqual({ hora: 0, minuto: 20 });
+  it('wraps around midnight without overflowing the hour', () => {
+    expect(withJitter({ hour: 0, minute: 10 }, 30, () => 0)).toEqual({ hour: 23, minute: 40 });
+    expect(withJitter({ hour: 23, minute: 50 }, 30, () => 1)).toEqual({ hour: 0, minute: 20 });
   });
 
-  it('fica sempre dentro da janela, em mil sorteios', () => {
+  it('stays inside the window across a thousand draws', () => {
     for (let i = 0; i < 1000; i++) {
-      const { hora, minuto } = comJitter({ hora: 21, minuto: 0 });
-      const minutos = hora * 60 + minuto;
-      expect(minutos).toBeGreaterThanOrEqual(21 * 60 - 30);
-      expect(minutos).toBeLessThanOrEqual(21 * 60 + 30);
+      const { hour, minute } = withJitter({ hour: 21, minute: 0 });
+      const minutes = hour * 60 + minute;
+      expect(minutes).toBeGreaterThanOrEqual(21 * 60 - 30);
+      expect(minutes).toBeLessThanOrEqual(21 * 60 + 30);
     }
   });
 });
 
-describe('precisaTelaDeCuidado', () => {
-  const pesada = (humor: Humor = 'triste') => ({ craving: 8, humor });
-  const leve = { craving: 2, humor: 'tranquilo' as Humor };
+describe('needsCareScreen', () => {
+  const heavy = (mood: Mood = 'sad') => ({ craving: 8, mood });
+  const light = { craving: 2, mood: 'calm' as Mood };
 
-  it('nao oferece antes de haver EMAs suficientes', () => {
-    expect(precisaTelaDeCuidado([pesada(), pesada()])).toBe(false);
+  it('does not offer before there are enough EMAs', () => {
+    expect(needsCareScreen([heavy(), heavy()])).toBe(false);
   });
 
-  it('oferece depois de tres pesadas seguidas', () => {
-    expect(precisaTelaDeCuidado([pesada(), pesada('irritado'), pesada()])).toBe(true);
+  it('offers after three heavy ones in a row', () => {
+    expect(needsCareScreen([heavy(), heavy('irritated'), heavy()])).toBe(true);
   });
 
-  it('nao oferece se uma das tres mais recentes nao foi pesada', () => {
-    expect(precisaTelaDeCuidado([pesada(), leve, pesada(), pesada()])).toBe(false);
+  it('does not offer if one of the three most recent was not heavy', () => {
+    expect(needsCareScreen([heavy(), light, heavy(), heavy()])).toBe(false);
   });
 
-  it('olha so as mais recentes, nao o historico inteiro', () => {
-    const historico = [pesada(), pesada(), pesada(), leve, leve];
-    expect(precisaTelaDeCuidado(historico, EMAS_PARA_CUIDADO)).toBe(true);
+  it('looks only at the most recent ones, not the whole history', () => {
+    const history = [heavy(), heavy(), heavy(), light, light];
+    expect(needsCareScreen(history, EMAS_FOR_CARE_SCREEN)).toBe(true);
   });
 
-  it('humor negativo com craving baixo nao basta', () => {
-    const so_triste = { craving: 3, humor: 'triste' as Humor };
-    expect(precisaTelaDeCuidado([so_triste, so_triste, so_triste])).toBe(false);
+  it('negative mood with low craving is not enough', () => {
+    const onlySad = { craving: 3, mood: 'sad' as Mood };
+    expect(needsCareScreen([onlySad, onlySad, onlySad])).toBe(false);
   });
 
-  it('craving alto com humor bom nao basta', () => {
-    const so_craving = { craving: 9, humor: 'animado' as Humor };
-    expect(precisaTelaDeCuidado([so_craving, so_craving, so_craving])).toBe(false);
+  it('high craving with good mood is not enough', () => {
+    const onlyCraving = { craving: 9, mood: 'upbeat' as Mood };
+    expect(needsCareScreen([onlyCraving, onlyCraving, onlyCraving])).toBe(false);
   });
 });

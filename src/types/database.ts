@@ -1,12 +1,12 @@
 /**
- * Espelha supabase/migrations/20260823000000_schema_inicial.sql.
+ * Mirrors supabase/migrations/20260823000000_initial_schema.sql.
  *
- * Escrito a mao porque o projeto Supabase ainda nao existe. Assim que existir,
- * este arquivo passa a ser gerado e nao deve mais ser editado a mao:
+ * Hand-written because the Supabase project does not exist yet. Once it does,
+ * this file becomes generated and must no longer be edited by hand:
  *
  *   npm run types:gen
- *   # ou, contra o projeto remoto:
- *   npx supabase gen types typescript --project-id SEU_ID > src/types/database.ts
+ *   # or, against the remote project:
+ *   npx supabase gen types typescript --project-id YOUR_ID > src/types/database.ts
  */
 export type Json = string | number | boolean | null | { [k: string]: Json } | Json[];
 
@@ -129,8 +129,8 @@ export type Database = {
   };
 };
 
-export type Tabelas = Database['public']['Tables'];
-export type LinhaUsuario = Tabelas['users']['Row'];
-export type LinhaEma = Tabelas['ema_entries']['Row'];
-export type LinhaPlano = Tabelas['coping_plans']['Row'];
-export type LinhaIntervencao = Tabelas['interventions']['Row'];
+export type Tables = Database['public']['Tables'];
+export type UserRow = Tables['users']['Row'];
+export type EmaRow = Tables['ema_entries']['Row'];
+export type PlanRow = Tables['coping_plans']['Row'];
+export type InterventionRow = Tables['interventions']['Row'];

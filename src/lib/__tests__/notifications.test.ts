@@ -1,7 +1,7 @@
-import { agendarEmas, DIAS_AGENDADOS } from '../notifications';
-import { HORARIOS_PADRAO, JITTER_MINUTOS } from '@/domain/ema';
+import { scheduleEmas, SCHEDULED_DAYS } from '../notifications';
+import { DEFAULT_TIMES, JITTER_MINUTES } from '@/domain/ema';
 
-const agendadas: { identifier: string; date: Date }[] = [];
+const scheduled: { identifier: string; date: Date }[] = [];
 
 jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: { DATE: 'date', TIME_INTERVAL: 'timeInterval', DAILY: 'daily' },
@@ -10,68 +10,70 @@ jest.mock('expo-notifications', () => ({
   setNotificationChannelAsync: jest.fn(async () => undefined),
   getAllScheduledNotificationsAsync: jest.fn(async () => []),
   cancelScheduledNotificationAsync: jest.fn(async () => undefined),
-  scheduleNotificationAsync: jest.fn(async (req: { identifier: string; trigger: { date: Date } }) => {
-    agendadas.push({ identifier: req.identifier, date: req.trigger.date });
-    return req.identifier;
-  }),
+  scheduleNotificationAsync: jest.fn(
+    async (req: { identifier: string; trigger: { date: Date } }) => {
+      scheduled.push({ identifier: req.identifier, date: req.trigger.date });
+      return req.identifier;
+    }
+  ),
 }));
 
 beforeEach(() => {
-  agendadas.length = 0;
+  scheduled.length = 0;
 });
 
-const meiaNoite = new Date('2026-08-23T00:05:00');
+const midnight = new Date('2026-08-23T00:05:00');
 
-describe('agendarEmas', () => {
-  it('agenda tres por dia pela janela inteira', async () => {
-    const n = await agendarEmas(HORARIOS_PADRAO, DIAS_AGENDADOS, meiaNoite);
-    expect(n).toBe(DIAS_AGENDADOS * HORARIOS_PADRAO.length);
-    expect(agendadas).toHaveLength(n);
+describe('scheduleEmas', () => {
+  it('schedules three a day across the whole window', async () => {
+    const n = await scheduleEmas(DEFAULT_TIMES, SCHEDULED_DAYS, midnight);
+    expect(n).toBe(SCHEDULED_DAYS * DEFAULT_TIMES.length);
+    expect(scheduled).toHaveLength(n);
   });
 
-  it('marca todas com prefixo proprio, para poder cancelar so as EMAs', async () => {
-    await agendarEmas(HORARIOS_PADRAO, 2, meiaNoite);
-    expect(agendadas.every((a) => a.identifier.startsWith('ema:'))).toBe(true);
+  it('tags them with its own prefix, so only EMAs get cancelled', async () => {
+    await scheduleEmas(DEFAULT_TIMES, 2, midnight);
+    expect(scheduled.every((s) => s.identifier.startsWith('ema:'))).toBe(true);
   });
 
-  it('nao agenda no passado', async () => {
-    const tardeDaNoite = new Date('2026-08-23T22:00:00');
-    await agendarEmas(HORARIOS_PADRAO, 1, tardeDaNoite);
-    // 11h, 17h e 21h ja passaram (o jitter chega no maximo a 21h30)
-    expect(agendadas).toHaveLength(0);
+  it('does not schedule in the past', async () => {
+    const lateNight = new Date('2026-08-23T22:00:00');
+    await scheduleEmas(DEFAULT_TIMES, 1, lateNight);
+    // 11am, 5pm and 9pm are gone (jitter reaches 9:30pm at most)
+    expect(scheduled).toHaveLength(0);
   });
 
-  it('pula so os horarios ja vencidos do primeiro dia', async () => {
-    const meioDia = new Date('2026-08-23T12:00:00');
-    const n = await agendarEmas(HORARIOS_PADRAO, 2, meioDia);
-    expect(n).toBe(5); // dia 1 perde as 11h; dia 2 completo
-    expect(agendadas.every((a) => a.date > meioDia)).toBe(true);
+  it('skips only the times already past on the first day', async () => {
+    const noon = new Date('2026-08-23T12:00:00');
+    const n = await scheduleEmas(DEFAULT_TIMES, 2, noon);
+    expect(n).toBe(5); // day 1 loses 11am; day 2 is complete
+    expect(scheduled.every((s) => s.date > noon)).toBe(true);
   });
 
-  it('respeita a janela de jitter em torno de cada horario base', async () => {
-    await agendarEmas(HORARIOS_PADRAO, 5, meiaNoite);
-    for (const { date } of agendadas) {
-      const minutos = date.getHours() * 60 + date.getMinutes();
-      const perto = HORARIOS_PADRAO.some(
-        (h) => Math.abs(minutos - (h.hora * 60 + h.minuto)) <= JITTER_MINUTOS
+  it('respects the jitter window around each base time', async () => {
+    await scheduleEmas(DEFAULT_TIMES, 5, midnight);
+    for (const { date } of scheduled) {
+      const minutes = date.getHours() * 60 + date.getMinutes();
+      const close = DEFAULT_TIMES.some(
+        (time) => Math.abs(minutes - (time.hour * 60 + time.minute)) <= JITTER_MINUTES
       );
-      expect(perto).toBe(true);
+      expect(close).toBe(true);
     }
   });
 
-  it('avanca uma data por dia, sem repetir identificador', async () => {
-    await agendarEmas(HORARIOS_PADRAO, 7, meiaNoite);
-    const ids = agendadas.map((a) => a.identifier);
+  it('advances one date per day, with no repeated identifier', async () => {
+    await scheduleEmas(DEFAULT_TIMES, 7, midnight);
+    const ids = scheduled.map((s) => s.identifier);
     expect(new Set(ids).size).toBe(ids.length);
 
-    const dias = new Set(agendadas.map((a) => a.date.toDateString()));
-    expect(dias.size).toBe(7);
+    const days = new Set(scheduled.map((s) => s.date.toDateString()));
+    expect(days.size).toBe(7);
   });
 
-  it('atravessa a virada do mes sem tropecar', async () => {
-    const fimDoMes = new Date('2026-08-30T00:05:00');
-    await agendarEmas(HORARIOS_PADRAO, 5, fimDoMes);
-    const meses = new Set(agendadas.map((a) => a.date.getMonth()));
-    expect(meses.size).toBe(2);
+  it('crosses the end of the month without tripping', async () => {
+    const monthEnd = new Date('2026-08-30T00:05:00');
+    await scheduleEmas(DEFAULT_TIMES, 5, monthEnd);
+    const months = new Set(scheduled.map((s) => s.date.getMonth()));
+    expect(months.size).toBe(2);
   });
 });

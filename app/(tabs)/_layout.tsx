@@ -2,14 +2,14 @@ import { Tabs } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { t } from '@/i18n';
 
-const ICONES = {
+const ICONS = {
   index: 'today-outline',
-  planos: 'list-outline',
-  progresso: 'trending-up-outline',
-  ajuda: 'heart-outline',
+  plans: 'list-outline',
+  progress: 'trending-up-outline',
+  help: 'heart-outline',
 } as const;
 
-export default function LayoutAbas() {
+export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
@@ -19,14 +19,14 @@ export default function LayoutAbas() {
         tabBarStyle: { backgroundColor: '#FFFFFF', borderTopColor: '#E2E8E5' },
       }}
     >
-      {(['index', 'planos', 'progresso', 'ajuda'] as const).map((nome) => (
+      {(['index', 'plans', 'progress', 'help'] as const).map((name) => (
         <Tabs.Screen
-          key={nome}
-          name={nome}
+          key={name}
+          name={name}
           options={{
-            title: t(`abas.${nome === 'index' ? 'hoje' : nome}`),
+            title: t(`tabs.${name === 'index' ? 'today' : name}`),
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name={ICONES[nome]} color={color} size={size} />
+              <Ionicons name={ICONS[name]} color={color} size={size} />
             ),
           }}
         />

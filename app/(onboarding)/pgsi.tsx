@@ -1,54 +1,54 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Botao, Cartao, Tela, Texto, Titulo } from '@/components/base';
-import { QuestionarioPgsi, ResultadoPgsi } from '@/components/QuestionarioPgsi';
-import { faixaPgsi } from '@/domain/scoring';
-import { useJunto } from '@/estado/useJunto';
+import { Body, Button, Card, Heading, Screen } from '@/components/base';
+import { PgsiQuestionnaire, PgsiResult } from '@/components/PgsiQuestionnaire';
+import { pgsiBand } from '@/domain/scoring';
+import { useJunto } from '@/state/useJunto';
 import { t } from '@/i18n';
 
-export default function PgsiOnboarding() {
+export default function OnboardingPgsi() {
   const router = useRouter();
-  const registrarPgsi = useJunto((e) => e.registrarPgsi);
-  const [fase, setFase] = useState<'intro' | 'perguntas' | 'resultado'>('intro');
-  const [escore, setEscore] = useState(0);
+  const recordPgsi = useJunto((s) => s.recordPgsi);
+  const [phase, setPhase] = useState<'intro' | 'questions' | 'result'>('intro');
+  const [score, setScore] = useState(0);
 
-  const seguir = () => router.push('/(onboarding)/permissao');
+  const next = () => router.push('/(onboarding)/permissions');
 
-  if (fase === 'intro') {
+  if (phase === 'intro') {
     return (
-      <Tela>
+      <Screen>
         <View className="flex-1 justify-center gap-4 py-16">
-          <Titulo className="text-3xl">{t('pgsi.titulo')}</Titulo>
-          <Cartao>
-            <Texto>{t('pgsi.intro')}</Texto>
-          </Cartao>
+          <Heading className="text-3xl">{t('pgsi.title')}</Heading>
+          <Card>
+            <Body>{t('pgsi.intro')}</Body>
+          </Card>
         </View>
-        <Botao titulo={t('comum.continuar')} onPress={() => setFase('perguntas')} />
-        <Botao titulo={t('comum.pular')} variante="discreto" onPress={seguir} />
-      </Tela>
+        <Button label={t('common.continue')} onPress={() => setPhase('questions')} />
+        <Button label={t('common.skip')} variant="quiet" onPress={next} />
+      </Screen>
     );
   }
 
-  if (fase === 'perguntas') {
+  if (phase === 'questions') {
     return (
-      <QuestionarioPgsi
-        onPular={seguir}
-        onConcluir={async (valor) => {
-          setEscore(valor);
-          await registrarPgsi(valor);
-          setFase('resultado');
+      <PgsiQuestionnaire
+        onSkip={next}
+        onFinish={async (value) => {
+          setScore(value);
+          await recordPgsi(value);
+          setPhase('result');
         }}
       />
     );
   }
 
   return (
-    <ResultadoPgsi
-      escore={escore}
-      faixa={faixaPgsi(escore)}
-      onFechar={seguir}
-      rotuloBotao={t('comum.continuar')}
+    <PgsiResult
+      score={score}
+      band={pgsiBand(score)}
+      onClose={next}
+      buttonLabel={t('common.continue')}
     />
   );
 }

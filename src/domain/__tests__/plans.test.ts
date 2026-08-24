@@ -1,104 +1,104 @@
-import { BIBLIOTECA, eficacia, escolherPlano } from '../plans';
-import type { Plano } from '../tipos';
+import { effectiveness, LIBRARY, pickPlan } from '../plans';
+import type { Plan } from '../types';
 
-const plano = (p: Partial<Plano> & { id: string }): Plano => ({
-  condicao: 'bater vontade',
-  acao: 'fazer alguma coisa',
-  categoria: 'substituicao',
-  gatilhos: [],
-  vezesMostrado: 0,
-  vezesFuncionou: 0,
+const plan = (p: Partial<Plan> & { id: string }): Plan => ({
+  condition: 'the urge hits',
+  action: 'do something',
+  category: 'substitution',
+  triggers: [],
+  timesShown: 0,
+  timesWorked: 0,
   ...p,
 });
 
-describe('biblioteca', () => {
-  it('nao tem id repetido', () => {
-    const ids = BIBLIOTECA.map((m) => m.id);
+describe('library', () => {
+  it('has no repeated id', () => {
+    const ids = LIBRARY.map((t) => t.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('lidera com substituicao, a categoria mais escolhida nos estudos', () => {
-    expect(BIBLIOTECA[0].categoria).toBe('substituicao');
+  it('leads with substitution, the category most picked in the studies', () => {
+    expect(LIBRARY[0].category).toBe('substitution');
   });
 
-  it('cobre todo gatilho que o usuario pode marcar', () => {
-    const cobertos = new Set(BIBLIOTECA.flatMap((m) => m.gatilhos));
-    for (const g of [
-      'dinheiro_apertado',
-      'propaganda',
-      'amigos_apostando',
-      'jogo_passando',
-      'tedio',
-      'briga_estresse',
-      'nada',
+  it('covers every trigger the user can select', () => {
+    const covered = new Set(LIBRARY.flatMap((t) => t.triggers));
+    for (const trigger of [
+      'money_tight',
+      'ads',
+      'friends_betting',
+      'game_on',
+      'boredom',
+      'conflict_stress',
+      'nothing',
     ]) {
-      expect(cobertos.has(g as never)).toBe(true);
+      expect(covered.has(trigger as never)).toBe(true);
     }
   });
 });
 
-describe('eficacia', () => {
-  it('da meio ponto a quem nunca foi usado', () => {
-    expect(eficacia({ vezesMostrado: 0, vezesFuncionou: 0 })).toBe(0.5);
+describe('effectiveness', () => {
+  it('gives half a point to one never used', () => {
+    expect(effectiveness({ timesShown: 0, timesWorked: 0 })).toBe(0.5);
   });
 
-  it('nao deixa 1 de 1 valer mais que 8 de 10', () => {
-    const novato = eficacia({ vezesMostrado: 1, vezesFuncionou: 1 });
-    const veterano = eficacia({ vezesMostrado: 10, vezesFuncionou: 8 });
-    expect(veterano).toBeGreaterThan(novato);
+  it('does not let 1 of 1 beat 8 of 10', () => {
+    const rookie = effectiveness({ timesShown: 1, timesWorked: 1 });
+    const veteran = effectiveness({ timesShown: 10, timesWorked: 8 });
+    expect(veteran).toBeGreaterThan(rookie);
   });
 });
 
-describe('escolherPlano', () => {
-  it('devolve nulo quando a pessoa nao tem plano nenhum', () => {
-    expect(escolherPlano([], ['tedio'])).toBeNull();
+describe('pickPlan', () => {
+  it('returns null when the person has no plan at all', () => {
+    expect(pickPlan([], ['boredom'])).toBeNull();
   });
 
-  it('prefere o plano feito para aquele gatilho', () => {
-    const planos = [
-      plano({ id: 'generico', vezesMostrado: 20, vezesFuncionou: 20 }),
-      plano({ id: 'do_gatilho', gatilhos: ['propaganda'] }),
+  it('prefers the plan written for that trigger', () => {
+    const plans = [
+      plan({ id: 'generic', timesShown: 20, timesWorked: 20 }),
+      plan({ id: 'for_trigger', triggers: ['ads'] }),
     ];
-    expect(escolherPlano(planos, ['propaganda'])?.id).toBe('do_gatilho');
+    expect(pickPlan(plans, ['ads'])?.id).toBe('for_trigger');
   });
 
-  it('entre os do gatilho, pega o que mais funcionou', () => {
-    const planos = [
-      plano({ id: 'fraco', gatilhos: ['tedio'], vezesMostrado: 10, vezesFuncionou: 1 }),
-      plano({ id: 'forte', gatilhos: ['tedio'], vezesMostrado: 10, vezesFuncionou: 9 }),
+  it('among those for the trigger, picks the one that worked most', () => {
+    const plans = [
+      plan({ id: 'weak', triggers: ['boredom'], timesShown: 10, timesWorked: 1 }),
+      plan({ id: 'strong', triggers: ['boredom'], timesShown: 10, timesWorked: 9 }),
     ];
-    expect(escolherPlano(planos, ['tedio'])?.id).toBe('forte');
+    expect(pickPlan(plans, ['boredom'])?.id).toBe('strong');
   });
 
-  it('cai no mais eficaz quando nenhum plano cobre o gatilho', () => {
-    const planos = [
-      plano({ id: 'a', gatilhos: ['propaganda'], vezesMostrado: 10, vezesFuncionou: 2 }),
-      plano({ id: 'b', gatilhos: ['propaganda'], vezesMostrado: 10, vezesFuncionou: 9 }),
+  it('falls back to the most effective when no plan covers the trigger', () => {
+    const plans = [
+      plan({ id: 'a', triggers: ['ads'], timesShown: 10, timesWorked: 2 }),
+      plan({ id: 'b', triggers: ['ads'], timesShown: 10, timesWorked: 9 }),
     ];
-    expect(escolherPlano(planos, ['jogo_passando'])?.id).toBe('b');
+    expect(pickPlan(plans, ['game_on'])?.id).toBe('b');
   });
 
-  it('ignora "nada" como gatilho -- nao e um gatilho de verdade', () => {
-    const planos = [
-      plano({ id: 'com_nada', gatilhos: ['nada'], vezesMostrado: 10, vezesFuncionou: 0 }),
-      plano({ id: 'melhor', gatilhos: ['propaganda'], vezesMostrado: 10, vezesFuncionou: 10 }),
+  it('ignores "nothing" as a trigger -- it is not a real one', () => {
+    const plans = [
+      plan({ id: 'with_nothing', triggers: ['nothing'], timesShown: 10, timesWorked: 0 }),
+      plan({ id: 'better', triggers: ['ads'], timesShown: 10, timesWorked: 10 }),
     ];
-    expect(escolherPlano(planos, ['nada'])?.id).toBe('melhor');
+    expect(pickPlan(plans, ['nothing'])?.id).toBe('better');
   });
 
-  it('funciona sem gatilho nenhum, que e o caso do SOS', () => {
-    const planos = [
-      plano({ id: 'a', vezesMostrado: 4, vezesFuncionou: 0 }),
-      plano({ id: 'b', vezesMostrado: 4, vezesFuncionou: 4 }),
+  it('works with no trigger at all, which is the SOS case', () => {
+    const plans = [
+      plan({ id: 'a', timesShown: 4, timesWorked: 0 }),
+      plan({ id: 'b', timesShown: 4, timesWorked: 4 }),
     ];
-    expect(escolherPlano(planos)?.id).toBe('b');
+    expect(pickPlan(plans)?.id).toBe('b');
   });
 
-  it('desempata pelo menos mostrado, para o novo ter vez', () => {
-    const planos = [
-      plano({ id: 'rodado', vezesMostrado: 8, vezesFuncionou: 4 }),
-      plano({ id: 'novo', vezesMostrado: 0, vezesFuncionou: 0 }),
+  it('breaks ties by least shown, so a new one gets its turn', () => {
+    const plans = [
+      plan({ id: 'well_worn', timesShown: 8, timesWorked: 4 }),
+      plan({ id: 'new_one', timesShown: 0, timesWorked: 0 }),
     ];
-    expect(escolherPlano(planos)?.id).toBe('novo');
+    expect(pickPlan(plans)?.id).toBe('new_one');
   });
 });

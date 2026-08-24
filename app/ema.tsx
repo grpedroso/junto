@@ -1,220 +1,211 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Botao, Chips, Pergunta, Progresso, TelaFixa } from '@/components/base';
-import { Escala } from '@/components/Escala';
-import { avaliarDisparo } from '@/domain/ema';
-import { escolherPlano } from '@/domain/plans';
-import type {
-  Contexto,
-  FaixaValor,
-  Gatilho,
-  Humor,
-  RespostaEma,
-} from '@/domain/tipos';
-import { useJunto } from '@/estado/useJunto';
-import { adiarUmaHora } from '@/lib/notifications';
-import { CHAVES, gravar, ler } from '@/lib/storage';
+import { Button, Chips, FixedScreen, Question, Steps } from '@/components/base';
+import { Scale } from '@/components/Scale';
+import { evaluateTrigger } from '@/domain/ema';
+import { pickPlan } from '@/domain/plans';
+import type { AmountBand, Context, EmaAnswer, Mood, Trigger } from '@/domain/types';
+import { useJunto } from '@/state/useJunto';
+import { snoozeOneHour } from '@/lib/notifications';
+import { KEYS, read, write } from '@/lib/storage';
 import { t } from '@/i18n';
 
-const HUMORES: Humor[] = ['tranquilo', 'ansioso', 'triste', 'irritado', 'animado', 'entediado'];
-const GATILHOS: Gatilho[] = [
-  'dinheiro_apertado',
-  'propaganda',
-  'amigos_apostando',
-  'jogo_passando',
-  'tedio',
-  'briga_estresse',
-  'nada',
+const MOODS: Mood[] = ['calm', 'anxious', 'sad', 'irritated', 'upbeat', 'bored'];
+const TRIGGERS: Trigger[] = [
+  'money_tight',
+  'ads',
+  'friends_betting',
+  'game_on',
+  'boredom',
+  'conflict_stress',
+  'nothing',
 ];
-const CONTEXTOS: Contexto[] = ['casa', 'trabalho', 'rua', 'sozinho', 'acompanhado'];
-const FAIXAS: FaixaValor[] = ['ate_50', '50_200', '200_500', 'mais_500'];
+const CONTEXTS: Context[] = ['home', 'work', 'out', 'alone', 'with_others'];
+const BANDS: AmountBand[] = ['upto_50', 'from_50_200', 'from_200_500', 'over_500'];
 
-const chips = <T extends string>(valores: T[], prefixo: string) =>
-  valores.map((v) => ({ valor: v, rotulo: t(`${prefixo}.${v}`) }));
+const chips = <T extends string>(values: T[], prefix: string) =>
+  values.map((v) => ({ value: v, label: t(`${prefix}.${v}`) }));
 
 /**
- * Seis perguntas, uma por tela, tudo em toque. A meta e vinte segundos: cada
- * pergunta a mais acelera o abandono, e engajamento e o maior risco do projeto.
+ * Six questions, one per screen, all by tapping. The target is twenty seconds:
+ * every extra question speeds up dropout, and engagement is the project's
+ * biggest risk.
  */
 export default function Ema() {
   const router = useRouter();
-  const { agendadaPara } = useLocalSearchParams<{ agendadaPara?: string }>();
-  const salvarEma = useJunto((e) => e.salvarEma);
-  const criarIntervencao = useJunto((e) => e.criarIntervencao);
-  const planos = useJunto((e) => e.planos);
+  const { scheduledFor } = useLocalSearchParams<{ scheduledFor?: string }>();
+  const saveEma = useJunto((s) => s.saveEma);
+  const createIntervention = useJunto((s) => s.createIntervention);
+  const plans = useJunto((s) => s.plans);
 
-  const [passo, setPasso] = useState(0);
+  const [step, setStep] = useState(0);
   const [craving, setCraving] = useState(0);
-  const [autoeficacia, setAutoeficacia] = useState(5);
-  const [humor, setHumor] = useState<Humor | null>(null);
-  const [gatilhos, setGatilhos] = useState<Gatilho[]>([]);
-  const [contexto, setContexto] = useState<Contexto[]>([]);
-  const [apostou, setApostou] = useState<boolean | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  const [selfEfficacy, setSelfEfficacy] = useState(5);
+  const [mood, setMood] = useState<Mood | null>(null);
+  const [triggers, setTriggers] = useState<Trigger[]>([]);
+  const [context, setContext] = useState<Context[]>([]);
+  const [gambled, setGambled] = useState<boolean | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const total = apostou ? 7 : 6;
+  const total = gambled ? 7 : 6;
 
-  // `apostouAgora` vem por parametro em vez de sair do estado: quem chama
-  // acabou de chamar setApostou, e o valor novo so existe no proximo render.
-  const concluir = async (faixa: FaixaValor | null, apostouAgora: boolean) => {
-    if (salvando || !humor) return;
-    setSalvando(true);
+  // `gambledNow` comes in as a parameter instead of from state: the caller has
+  // just called setGambled, and the new value only exists on the next render.
+  const finish = async (band: AmountBand | null, gambledNow: boolean) => {
+    if (saving || !mood) return;
+    setSaving(true);
 
-    const resposta: RespostaEma = {
+    const answer: EmaAnswer = {
       craving,
-      autoeficacia,
-      humor,
-      gatilhos,
-      contexto,
-      apostouDesdeUltima: apostouAgora,
-      faixaValor: faixa,
+      selfEfficacy,
+      mood,
+      triggers,
+      context,
+      gambledSinceLast: gambledNow,
+      amountBand: band,
     };
 
-    const ema = await salvarEma(resposta);
-    const disparo = avaliarDisparo(resposta);
+    const ema = await saveEma(answer);
+    const decision = evaluateTrigger(answer);
 
-    if (!disparo.dispara) {
+    if (!decision.fires) {
       router.back();
       return;
     }
 
-    const plano = escolherPlano(planos, gatilhos);
-    const intervencao = await criarIntervencao(disparo.motivo, ema.id, plano?.id ?? null);
-    router.replace({ pathname: '/intervencao/[id]', params: { id: intervencao.id } });
+    const plan = pickPlan(plans, triggers);
+    const intervention = await createIntervention(decision.reason, ema.id, plan?.id ?? null);
+    router.replace({ pathname: '/intervention/[id]', params: { id: intervention.id } });
   };
 
-  const adiar = async () => {
-    // Uma vez so: adiar sem limite vira nunca responder.
-    const jaAdiou = await ler<string>(CHAVES.adiada);
-    const chave = agendadaPara || new Date().toISOString().slice(0, 13);
-    if (jaAdiou !== chave) {
-      await gravar(CHAVES.adiada, chave);
-      await adiarUmaHora(chave);
+  const snooze = async () => {
+    // Once only: snoozing without a limit becomes never answering.
+    const alreadySnoozed = await read<string>(KEYS.snoozed);
+    const key = scheduledFor || new Date().toISOString().slice(0, 13);
+    if (alreadySnoozed !== key) {
+      await write(KEYS.snoozed, key);
+      await snoozeOneHour(key);
     }
     router.back();
   };
 
-  const alternar = <T extends string>(lista: T[], v: T) =>
-    lista.includes(v) ? lista.filter((x) => x !== v) : [...lista, v];
+  const toggle = <T extends string>(list: T[], v: T) =>
+    list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
 
   return (
-    <TelaFixa>
-      <Progresso passo={passo} total={total} />
+    <FixedScreen>
+      <Steps step={step} total={total} />
 
       <View className="flex-1 justify-center gap-8">
-        {passo === 0 && (
+        {step === 0 && (
           <>
-            <Pergunta>{t('ema.perguntas.craving')}</Pergunta>
-            <Escala
-              valor={craving}
+            <Question>{t('ema.questions.craving')}</Question>
+            <Scale
+              value={craving}
               onChange={setCraving}
-              rotuloMin={t('ema.escala.craving_min')}
-              rotuloMax={t('ema.escala.craving_max')}
-              rotuloAcessivel={t('ema.perguntas.craving')}
+              minLabel={t('ema.scale.craving_min')}
+              maxLabel={t('ema.scale.craving_max')}
+              accessibilityLabel={t('ema.questions.craving')}
             />
           </>
         )}
 
-        {passo === 1 && (
+        {step === 1 && (
           <>
-            <Pergunta>{t('ema.perguntas.autoeficacia')}</Pergunta>
-            <Escala
-              valor={autoeficacia}
-              onChange={setAutoeficacia}
-              rotuloMin={t('ema.escala.ae_min')}
-              rotuloMax={t('ema.escala.ae_max')}
-              rotuloAcessivel={t('ema.perguntas.autoeficacia')}
+            <Question>{t('ema.questions.self_efficacy')}</Question>
+            <Scale
+              value={selfEfficacy}
+              onChange={setSelfEfficacy}
+              minLabel={t('ema.scale.se_min')}
+              maxLabel={t('ema.scale.se_max')}
+              accessibilityLabel={t('ema.questions.self_efficacy')}
             />
           </>
         )}
 
-        {passo === 2 && (
+        {step === 2 && (
           <>
-            <Pergunta>{t('ema.perguntas.humor')}</Pergunta>
+            <Question>{t('ema.questions.mood')}</Question>
             <Chips
-              itens={chips(HUMORES, 'humor')}
-              selecionados={humor ? [humor] : []}
+              items={chips(MOODS, 'mood')}
+              selected={mood ? [mood] : []}
               onToggle={(v) => {
-                setHumor(v as Humor);
-                setPasso(3);
+                setMood(v as Mood);
+                setStep(3);
               }}
             />
           </>
         )}
 
-        {passo === 3 && (
+        {step === 3 && (
           <>
-            <Pergunta>{t('ema.perguntas.gatilhos')}</Pergunta>
+            <Question>{t('ema.questions.triggers')}</Question>
             <Chips
-              itens={chips(GATILHOS, 'gatilho')}
-              selecionados={gatilhos}
-              onToggle={(v) => setGatilhos((g) => alternar(g, v as Gatilho))}
+              items={chips(TRIGGERS, 'trigger')}
+              selected={triggers}
+              onToggle={(v) => setTriggers((current) => toggle(current, v as Trigger))}
             />
           </>
         )}
 
-        {passo === 4 && (
+        {step === 4 && (
           <>
-            <Pergunta>{t('ema.perguntas.contexto')}</Pergunta>
+            <Question>{t('ema.questions.context')}</Question>
             <Chips
-              itens={chips(CONTEXTOS, 'contexto')}
-              selecionados={contexto}
-              onToggle={(v) => setContexto((c) => alternar(c, v as Contexto))}
+              items={chips(CONTEXTS, 'context')}
+              selected={context}
+              onToggle={(v) => setContext((current) => toggle(current, v as Context))}
             />
           </>
         )}
 
-        {passo === 5 && (
+        {step === 5 && (
           <>
-            <Pergunta>{t('ema.perguntas.apostou')}</Pergunta>
+            <Question>{t('ema.questions.gambled')}</Question>
             <View className="gap-3">
-              <Botao
-                titulo={t('ema.nao')}
-                variante="secundario"
+              <Button
+                label={t('ema.no')}
+                variant="secondary"
                 onPress={() => {
-                  setApostou(false);
-                  void concluir(null, false);
+                  setGambled(false);
+                  void finish(null, false);
                 }}
               />
-              <Botao
-                titulo={t('ema.sim')}
-                variante="secundario"
+              <Button
+                label={t('ema.yes')}
+                variant="secondary"
                 onPress={() => {
-                  setApostou(true);
-                  setPasso(6);
+                  setGambled(true);
+                  setStep(6);
                 }}
               />
             </View>
           </>
         )}
 
-        {passo === 6 && (
+        {step === 6 && (
           <>
-            <Pergunta>{t('ema.perguntas.faixa')}</Pergunta>
+            <Question>{t('ema.questions.band')}</Question>
             <Chips
-              itens={chips(FAIXAS, 'faixa_valor')}
-              selecionados={[]}
-              onToggle={(v) => void concluir(v as FaixaValor, true)}
+              items={chips(BANDS, 'amount_band')}
+              selected={[]}
+              onToggle={(v) => void finish(v as AmountBand, true)}
             />
           </>
         )}
       </View>
 
       <View className="gap-2">
-        {passo <= 1 && (
-          <Botao titulo={t('comum.continuar')} onPress={() => setPasso(passo + 1)} />
+        {step <= 1 && <Button label={t('common.continue')} onPress={() => setStep(step + 1)} />}
+        {(step === 3 || step === 4) && (
+          <Button label={t('common.continue')} onPress={() => setStep(step + 1)} />
         )}
-        {(passo === 3 || passo === 4) && (
-          <Botao titulo={t('comum.continuar')} onPress={() => setPasso(passo + 1)} />
-        )}
-        {passo === 0 && (
-          <Botao titulo={t('ema.depois')} variante="discreto" onPress={adiar} />
-        )}
-        {passo > 0 && passo < 6 && (
-          <Botao titulo={t('comum.voltar')} variante="discreto" onPress={() => setPasso(passo - 1)} />
+        {step === 0 && <Button label={t('ema.later')} variant="quiet" onPress={snooze} />}
+        {step > 0 && step < 6 && (
+          <Button label={t('common.back')} variant="quiet" onPress={() => setStep(step - 1)} />
         )}
       </View>
-    </TelaFixa>
+    </FixedScreen>
   );
 }

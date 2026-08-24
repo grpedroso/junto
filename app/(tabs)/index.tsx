@@ -2,94 +2,96 @@ import { useEffect, useMemo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Botao, Cartao, Rotulo, Tela, Texto, Titulo } from '@/components/base';
-import { precisaTelaDeCuidado } from '@/domain/ema';
-import { diasDesdeUltimaAposta, totalDeDiasSemAposta } from '@/domain/progresso';
-import { useJunto } from '@/estado/useJunto';
-import { CHAVES, gravar, ler } from '@/lib/storage';
+import { Body, Button, Card, Heading, Label, Screen } from '@/components/base';
+import { needsCareScreen } from '@/domain/ema';
+import { daysSinceLastBet, totalCleanDays } from '@/domain/progress';
+import { useJunto } from '@/state/useJunto';
+import { KEYS, read, write } from '@/lib/storage';
 import { t } from '@/i18n';
 
-export default function Hoje() {
+export default function Today() {
   const router = useRouter();
-  const perfil = useJunto((e) => e.perfil);
-  const emas = useJunto((e) => e.emas);
+  const profile = useJunto((s) => s.profile);
+  const emas = useJunto((s) => s.emas);
 
-  const entradas = useMemo(
+  const entries = useMemo(
     () =>
       emas.map((e) => ({
-        respondidaEm: new Date(e.respondidaEm),
+        answeredAt: new Date(e.answeredAt),
         craving: e.craving,
-        apostouDesdeUltima: e.apostouDesdeUltima,
-        faixaValor: e.faixaValor,
+        gambledSinceLast: e.gambledSinceLast,
+        amountBand: e.amountBand,
       })),
     [emas]
   );
 
-  const dias = diasDesdeUltimaAposta(entradas);
-  const total = totalDeDiasSemAposta(entradas);
-  const cuidado = precisaTelaDeCuidado(emas);
-  const ultimaEma = emas[0]?.id;
+  const days = daysSinceLastBet(entries);
+  const total = totalCleanDays(entries);
+  const care = needsCareScreen(emas);
+  const latestEma = emas[0]?.id;
 
-  // Oferecer, nunca impor: a tela de cuidado nao bloqueia nem forca acao. E
-  // aparece uma vez por resposta nova -- repetir a cada abertura viraria cobranca.
+  // Offer, never impose: the care screen neither blocks nor forces anything. And
+  // it shows once per new answer -- repeating it every open would read as nagging.
   useEffect(() => {
-    if (!cuidado || !ultimaEma) return;
+    if (!care || !latestEma) return;
     void (async () => {
-      const vista = await ler<string>(CHAVES.cuidadoVisto);
-      if (vista === ultimaEma) return;
-      await gravar(CHAVES.cuidadoVisto, ultimaEma);
-      router.push('/cuidado');
+      const seen = await read<string>(KEYS.careSeen);
+      if (seen === latestEma) return;
+      await write(KEYS.careSeen, latestEma);
+      router.push('/care');
     })();
-  }, [cuidado, ultimaEma, router]);
+  }, [care, latestEma, router]);
 
   return (
-    <Tela>
+    <Screen>
       <View className="flex-row items-center justify-between py-2">
-        <Titulo>{t('onboarding.boas_vindas_titulo')}</Titulo>
+        <Heading>{t('onboarding.welcome_title')}</Heading>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t('ajustes.titulo')}
-          onPress={() => router.push('/ajustes')}
+          accessibilityLabel={t('settings.title')}
+          onPress={() => router.push('/settings')}
           className="h-11 w-11 items-center justify-center active:opacity-60"
         >
           <Ionicons name="settings-outline" size={22} color="#5C6E68" />
         </Pressable>
       </View>
 
-      <Cartao className="items-center gap-1 py-8">
-        <Text className="text-6xl font-bold text-junto">{dias ?? 0}</Text>
-        <Rotulo>
-          {dias === 1 ? t('progresso.dias_sem_apostar_um') : t('progresso.dias_sem_apostar')}
-        </Rotulo>
+      <Card className="items-center gap-1 py-8">
+        <Text className="text-6xl font-bold text-junto">{days ?? 0}</Text>
+        <Label>
+          {days === 1
+            ? t('progress.days_without_betting_one')
+            : t('progress.days_without_betting')}
+        </Label>
         {total > 0 && (
           <Text className="pt-2 text-center text-sm text-tinta-suave">
-            {t('progresso.total_acumulado', { n: total })}
+            {t('progress.running_total', { n: total })}
           </Text>
         )}
-      </Cartao>
+      </Card>
 
-      <Botao titulo={t('ema.notificacao_titulo')} onPress={() => router.push('/ema')} />
+      <Button label={t('ema.notification_title')} onPress={() => router.push('/ema')} />
 
       <Pressable
         accessibilityRole="button"
         onPress={() => router.push('/sos')}
         className="min-h-16 items-center justify-center rounded-2xl border-2 border-junto bg-superficie active:opacity-70"
       >
-        <Text className="text-xl font-bold text-junto">{t('sos.botao')}</Text>
-        <Text className="text-sm text-tinta-suave">{t('sos.titulo')}</Text>
+        <Text className="text-xl font-bold text-junto">{t('sos.button')}</Text>
+        <Text className="text-sm text-tinta-suave">{t('sos.title')}</Text>
       </Pressable>
 
-      {perfil?.baselinePgsi === null && (
-        <Cartao>
-          <Texto>{t('pgsi.intro')}</Texto>
-          <Botao
+      {profile?.baselinePgsi === null && (
+        <Card>
+          <Body>{t('pgsi.intro')}</Body>
+          <Button
             className="mt-3"
-            variante="secundario"
-            titulo={t('pgsi.titulo')}
+            variant="secondary"
+            label={t('pgsi.title')}
             onPress={() => router.push('/(onboarding)/pgsi')}
           />
-        </Cartao>
+        </Card>
       )}
-    </Tela>
+    </Screen>
   );
 }
