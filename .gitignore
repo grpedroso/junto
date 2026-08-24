@@ -39,3 +39,11 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Junto
+.env
+*.keystore
+google-services.json
+/supabase/.branches
+/supabase/.temp
+coverage/
