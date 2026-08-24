@@ -62,6 +62,10 @@
     },
     "collectCoverageFrom": [
       "src/domain/**/*.ts"
+    ],
+    "testPathIgnorePatterns": [
+      "<rootDir>/node_modules/",
+      "<rootDir>/spike-notif/"
     ]
   }
 }

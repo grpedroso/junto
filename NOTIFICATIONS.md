@@ -13,11 +13,13 @@ Este documento é onde o resultado do teste fica registrado.
 
 ## O spike
 
-Fica em `../spike-notif` — fora deste repositório, de propósito: é descartável e
-um segundo projeto Expo aninhado quebraria o Metro (colisão de haste map).
+Fica em `spike-notif/`, um segundo projeto Expo dentro do repo. O `metro.config.js`
+bloqueia essa pasta — sem isso o Metro acha dois `package.json` e duas cópias de
+react-native, e o bundle do app quebra.
 
 ```bash
-cd ../spike-notif
+cd spike-notif
+npm install
 npx eas build --platform android --profile development
 ```
 
