@@ -20,7 +20,9 @@ files and two copies of react-native, and the app bundle breaks.
 ```bash
 cd spike-notif
 npm install
-npx eas build --platform android --profile development
+npx eas-cli login
+npx eas-cli init
+npx eas-cli build --platform android --profile preview
 ```
 
 What it does:
@@ -55,13 +57,16 @@ Expo Go process, so "closing the app" closes the host with it and the test
 measures something else. Since SDK 53 expo-notifications also has functionality
 removed in Expo Go.
 
-**Use a development build or the preview APK. Always.**
+**Use the preview APK.** A development build works for the scheduling itself,
+but it needs a Metro server on the same network to render anything — and the
+protocol ends by opening the app on day 3, alone, to read the delivery log. The
+preview APK embeds its bundle and opens standalone.
 
 ## Test protocol
 
 Three consecutive days, without opening the app outside the check-in times.
 
-- [ ] Development build installed on a **physical device**
+- [ ] Preview APK installed on a **physical device** (not a development build)
 - [ ] At least **2 different manufacturers** — ideally including Xiaomi or Samsung
 - [ ] Notification permission granted (Android 13+ asks explicitly)
 - [ ] "Schedule 3 daily" pressed exactly once, on day 1

@@ -8,8 +8,15 @@ Not part of the app. Junto's `metro.config.js` blocks this folder.
 
 ```bash
 npm install
-npx eas build --platform android --profile development
+npx eas-cli login                                          # a free Expo account
+npx eas-cli init                                           # writes extra.eas.projectId into app.json
+npx eas-cli build --platform android --profile preview
 ```
+
+Build the **preview** profile, not the development one. The protocol ends by
+opening the app on day 3 to read the delivery log, and a development build
+renders nothing without a Metro server on the same network. The preview APK
+carries its own bundle, so it opens standalone three days later.
 
 Test protocol, pass criterion and where to record the result:
 [../NOTIFICATIONS.md](../NOTIFICATIONS.md).

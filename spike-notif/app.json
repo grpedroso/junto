@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "spike-notif",
-    "slug": "spike-notif",
+    "slug": "junto-spike",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -30,6 +30,12 @@
           "defaultChannel": "ema"
         }
       ]
-    ]
+    ],
+    "owner": "grpedrosos-team",
+    "extra": {
+      "eas": {
+        "projectId": "f484bb8a-07ed-4123-84fa-1a6a94d6a6af"
+      }
+    }
   }
 }
