@@ -1,0 +1,10 @@
+# Who has to review a pull request before it can be merged into main.
+#
+# Pair this with a branch ruleset on `main` that requires a pull request and
+# requires review from Code Owners. That combination is what makes "nothing
+# lands without my approval" real for other people's contributions.
+#
+# One thing GitHub does not do: let you approve your own pull request. So this
+# file binds contributors, never the maintainer -- who merges their own work
+# through the repository-admin bypass, not through self-approval.
+* @grpedroso
