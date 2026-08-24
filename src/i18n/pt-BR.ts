@@ -67,6 +67,7 @@ export default {
     notification_title: 'E aí, como tá?',
     notification_body: '20 segundos, 6 perguntas.',
     later: 'Respondo depois',
+    finish: 'Pronto',
     later_confirmed: 'Beleza, te chamo daqui a uma hora.',
     later_spent: 'Essa é a última — depois disso, só na próxima.',
     questions: {

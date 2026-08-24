@@ -46,14 +46,13 @@ export default function Ema() {
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [context, setContext] = useState<Context[]>([]);
   const [gambled, setGambled] = useState<boolean | null>(null);
+  const [band, setBand] = useState<AmountBand | null>(null);
   const [saving, setSaving] = useState(false);
 
   const total = gambled ? 7 : 6;
 
-  // `gambledNow` comes in as a parameter instead of from state: the caller has
-  // just called setGambled, and the new value only exists on the next render.
-  const finish = async (band: AmountBand | null, gambledNow: boolean) => {
-    if (saving || !mood) return;
+  const finish = async () => {
+    if (saving || !mood || gambled === null) return;
     setSaving(true);
 
     const answer: EmaAnswer = {
@@ -62,8 +61,10 @@ export default function Ema() {
       mood,
       triggers,
       context,
-      gambledSinceLast: gambledNow,
-      amountBand: band,
+      gambledSinceLast: gambled,
+      // Going back and changing "Apostei" to "Nao apostei" would otherwise
+      // leave a band behind, and the database rejects a band without a bet.
+      amountBand: gambled ? band : null,
     };
 
     const ema = await saveEma(answer);
@@ -92,6 +93,22 @@ export default function Ema() {
 
   const toggle = <T extends string>(list: T[], v: T) =>
     list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
+
+  /**
+   * Every step advances the same way: pick, then confirm. Selecting used to jump
+   * on some steps and submit outright on others, which made a mistap
+   * unrecoverable exactly on the answers that decide whether an intervention
+   * fires.
+   *
+   * The last step is not a fixed number: answering "nao apostei" ends the EMA at
+   * step 5, answering "apostei" adds the band question.
+   */
+  const isLast = step === 5 ? gambled === false : step === 6;
+
+  // Only the single-choice steps can be empty. Triggers and context are allowed
+  // to be, and the scales always carry a value.
+  const answered =
+    step === 2 ? mood !== null : step === 5 ? gambled !== null : step === 6 ? band !== null : true;
 
   return (
     <FixedScreen>
@@ -130,10 +147,7 @@ export default function Ema() {
             <Chips
               items={chips(MOODS, 'mood')}
               selected={mood ? [mood] : []}
-              onToggle={(v) => {
-                setMood(v as Mood);
-                setStep(3);
-              }}
+              onToggle={(v) => setMood(v as Mood)}
             />
           </>
         )}
@@ -163,24 +177,14 @@ export default function Ema() {
         {step === 5 && (
           <>
             <Question>{t('ema.questions.gambled')}</Question>
-            <View className="gap-3">
-              <Button
-                label={t('ema.no')}
-                variant="secondary"
-                onPress={() => {
-                  setGambled(false);
-                  void finish(null, false);
-                }}
-              />
-              <Button
-                label={t('ema.yes')}
-                variant="secondary"
-                onPress={() => {
-                  setGambled(true);
-                  setStep(6);
-                }}
-              />
-            </View>
+            <Chips
+              items={[
+                { value: 'no', label: t('ema.no') },
+                { value: 'yes', label: t('ema.yes') },
+              ]}
+              selected={gambled === null ? [] : [gambled ? 'yes' : 'no']}
+              onToggle={(v) => setGambled(v === 'yes')}
+            />
           </>
         )}
 
@@ -189,20 +193,21 @@ export default function Ema() {
             <Question>{t('ema.questions.band')}</Question>
             <Chips
               items={chips(BANDS, 'amount_band')}
-              selected={[]}
-              onToggle={(v) => void finish(v as AmountBand, true)}
+              selected={band ? [band] : []}
+              onToggle={(v) => setBand(v as AmountBand)}
             />
           </>
         )}
       </View>
 
       <View className="gap-2">
-        {step <= 1 && <Button label={t('common.continue')} onPress={() => setStep(step + 1)} />}
-        {(step === 3 || step === 4) && (
-          <Button label={t('common.continue')} onPress={() => setStep(step + 1)} />
-        )}
+        <Button
+          label={isLast ? t('ema.finish') : t('common.continue')}
+          disabled={!answered || saving}
+          onPress={() => (isLast ? void finish() : setStep(step + 1))}
+        />
         {step === 0 && <Button label={t('ema.later')} variant="quiet" onPress={snooze} />}
-        {step > 0 && step < 6 && (
+        {step > 0 && (
           <Button label={t('common.back')} variant="quiet" onPress={() => setStep(step - 1)} />
         )}
       </View>
