@@ -1,15 +1,15 @@
 # spike-notif
 
-App descartável da Fase 0 do Junto. Existe para responder uma pergunta só:
-**o Android entrega notificação agendada em aparelho brasileiro real, com o app
-fechado, por três dias seguidos?**
+Junto's disposable Phase 0 app. It exists to answer one question:
+**does Android deliver a scheduled notification on a real Brazilian phone, with
+the app closed, for three days running?**
 
-Não é parte do app. O `metro.config.js` do Junto bloqueia esta pasta.
+Not part of the app. Junto's `metro.config.js` blocks this folder.
 
 ```bash
 npm install
 npx eas build --platform android --profile development
 ```
 
-Protocolo do teste, critério de aprovação e onde anotar o resultado:
+Test protocol, pass criterion and where to record the result:
 [../NOTIFICATIONS.md](../NOTIFICATIONS.md).

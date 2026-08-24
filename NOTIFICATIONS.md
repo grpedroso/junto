@@ -1,21 +1,21 @@
-# Notificações — Fase 0
+# Notifications — Phase 0
 
-O maior risco técnico do Junto não é o código do app: é o Android matar as
-notificações em background. Se as EMAs não chegarem de forma confiável em
-aparelho brasileiro real, o produto inteiro deixa de existir.
+Junto's biggest technical risk is not the app's code: it is Android killing
+background notifications. If the EMAs do not arrive reliably on a real Brazilian
+phone, the whole product stops existing.
 
-**Nada do resto do app deve ser construído em cima de uma premissa não testada.**
-Este documento é onde o resultado do teste fica registrado.
+**Nothing else should be built on top of an untested premise.** This document is
+where the test result gets recorded.
 
 ## Status
 
-🟡 **Spike escrito, teste em aparelho pendente.** Escrito em 23/08/2026.
+🟡 **Spike written, on-device test pending.** Written 23/08/2026.
 
-## O spike
+## The spike
 
-Fica em `spike-notif/`, um segundo projeto Expo dentro do repo. O `metro.config.js`
-bloqueia essa pasta — sem isso o Metro acha dois `package.json` e duas cópias de
-react-native, e o bundle do app quebra.
+It lives in `spike-notif/`, a second Expo project inside the repo.
+`metro.config.js` blocks that folder — without it Metro finds two `package.json`
+files and two copies of react-native, and the app bundle breaks.
 
 ```bash
 cd spike-notif
@@ -23,120 +23,123 @@ npm install
 npx eas build --platform android --profile development
 ```
 
-O que ele faz:
+What it does:
 
-- Pede `POST_NOTIFICATIONS` (obrigatório no Android 13+)
-- Cria o canal `ema` com `AndroidImportance.MAX`
-- Agenda três notificações diárias em 11h / 17h / 21h
-- Registra cada entrega num log persistente (AsyncStorage) e mostra a contagem por dia
-- Botão de teste em 60s, para conferir o canal sem esperar o dia inteiro
-- Botão que abre direto a tela de otimização de bateria do Android
-- Recusa-se a validar em emulador (`Device.isDevice`)
+- Asks for `POST_NOTIFICATIONS` (required on Android 13+)
+- Creates the `ema` channel with `AndroidImportance.MAX`
+- Schedules three daily notifications at 11:00 / 17:00 / 21:00
+- Records every delivery in a persistent log (AsyncStorage) and shows the per-day count
+- A 60-second test button, to check the channel without waiting all day
+- A button that opens Android's battery optimisation screen directly
+- Refuses to validate on an emulator (`Device.isDevice`)
 
-### Como ele prova que a notificação chegou
+### How it proves a notification arrived
 
-Este é o ponto não óbvio. Com o app morto, **nenhum listener roda** — nem
-`addNotificationReceivedListener`, nem o de resposta. Se a prova dependesse
-deles, o teste mediria a coisa errada.
+This is the non-obvious part. With the app dead, **no listener runs** — not
+`addNotificationReceivedListener`, not the response one. If the proof depended on
+them, the test would be measuring the wrong thing.
 
-A prova é `getPresentedNotificationsAsync()`: o que ainda está na bandeja foi
-entregue de fato, e continua lá mesmo que o app tenha sido morto no intervalo.
-Ao abrir, o spike varre a bandeja e registra o que ainda não tinha visto,
-deduplicando por `identifier:date`.
+The proof is `getPresentedNotificationsAsync()`: whatever is still in the tray
+was actually delivered, and stays there even if the app was killed in between.
+On open, the spike sweeps the tray and records anything it had not seen,
+deduplicating by `identifier:date`.
 
-**Consequência para o protocolo:** durante o teste, **não deslize as notificações
-para fora da bandeja.** Uma notificação dispensada some da varredura e conta como
-não entregue.
+**Consequence for the protocol:** during the test, **do not swipe notifications
+out of the tray.** A dismissed notification disappears from the sweep and counts
+as not delivered.
 
-## ⚠️ Expo Go não serve
+## ⚠️ Expo Go is no good
 
-Testar isso no Expo Go invalida o resultado: o agendamento pertence ao processo
-do Expo Go, então "fechar o app" fecha o host junto e o teste mede outra coisa.
-Desde o SDK 53 o expo-notifications também tem funcionalidade removida no Expo Go.
+Testing this in Expo Go invalidates the result: the scheduling belongs to the
+Expo Go process, so "closing the app" closes the host with it and the test
+measures something else. Since SDK 53 expo-notifications also has functionality
+removed in Expo Go.
 
-**Use development build ou o APK de preview. Sempre.**
+**Use a development build or the preview APK. Always.**
 
-## Protocolo do teste
+## Test protocol
 
-Três dias corridos, sem abrir o app fora dos horários de conferência.
+Three consecutive days, without opening the app outside the check-in times.
 
-- [ ] Build de desenvolvimento instalado em **aparelho físico**
-- [ ] Pelo menos **2 fabricantes** diferentes — idealmente incluindo Xiaomi ou Samsung
-- [ ] Permissão de notificação concedida (Android 13+ pede explicitamente)
-- [ ] "Agendar 3 diárias" pressionado uma única vez, no dia 1
-- [ ] App fechado com swipe away (removido dos recentes) no dia 1
-- [ ] Economia de bateria **ligada** — é o cenário real, não o otimista
-- [ ] Aparelho reiniciado no fim do dia 2, sem reabrir o app depois
-- [ ] Nenhuma notificação dispensada da bandeja durante os 3 dias
-- [ ] Conferência: abrir o app no fim do dia 3 e ler "Entregas por dia"
+- [ ] Development build installed on a **physical device**
+- [ ] At least **2 different manufacturers** — ideally including Xiaomi or Samsung
+- [ ] Notification permission granted (Android 13+ asks explicitly)
+- [ ] "Schedule 3 daily" pressed exactly once, on day 1
+- [ ] App closed by swiping away (removed from recents) on day 1
+- [ ] Battery saver **on** — that is the real scenario, not the optimistic one
+- [ ] Device rebooted at the end of day 2, without reopening the app afterwards
+- [ ] No notification dismissed from the tray during the three days
+- [ ] Check: open the app at the end of day 3 and read "Deliveries per day"
 
-### Critério de aprovação
+### Pass criterion
 
-**9/9 entregues em 3 dias, sem abrir o app.** Atraso de até 30 minutos conta
-como entregue — o produto já prevê jitter de ±30min, então atraso não atrapalha.
+**9/9 delivered over 3 days, without opening the app.** A delay of up to 30
+minutes counts as delivered — the product already plans for ±30min jitter, so
+lateness does not hurt.
 
-8/9 ou menos = reprovado. Não arredonde: uma EMA perdida por dia é 33% do dado.
+8/9 or fewer is a fail. Do not round up: one missed EMA per day is 33% of the data.
 
-## Matriz de resultados
+## Results matrix
 
-Preencher conforme testar.
+Fill in as you test.
 
-| Aparelho | Android | Otimização de bateria | Dia 1 | Dia 2 | Dia 3 (pós-reboot) | Veredito |
+| Device | Android | Battery optimisation | Day 1 | Day 2 | Day 3 (post-reboot) | Verdict |
 |---|---|---|---|---|---|---|
-| _(preencher)_ | | | /3 | /3 | /3 | |
-| _(preencher)_ | | | /3 | /3 | /3 | |
+| _(fill in)_ | | | /3 | /3 | /3 | |
+| _(fill in)_ | | | /3 | /3 | /3 | |
 
-## O que já se sabe sobre o Android
+## What is already known about Android
 
-**`POST_NOTIFICATIONS` (Android 13+, API 33).** Permissão em runtime. Sem ela o
-app agenda e nada aparece, sem erro nenhum. O spike pede na primeira abertura.
+**`POST_NOTIFICATIONS` (Android 13+, API 33).** A runtime permission. Without it
+the app schedules and nothing appears, with no error at all. The spike asks on
+first open.
 
-**Alarmes exatos (Android 12+, API 31).** `SCHEDULE_EXACT_ALARM` passou a exigir
-concessão do usuário e, na Play Store, justificativa de política — `USE_EXACT_ALARM`
-é restrito a app de alarme/calendário e o Junto não se qualifica.
+**Exact alarms (Android 12+, API 31).** `SCHEDULE_EXACT_ALARM` now requires user
+consent and, on the Play Store, a policy justification — `USE_EXACT_ALARM` is
+restricted to alarm and calendar apps, and Junto does not qualify.
 
-**Boa notícia: o Junto não precisa de alarme exato.** O produto já quer jitter de
-±30min para a resposta não virar automática. Alarme inexato entrega dentro dessa
-janela de qualquer jeito. Se o teste passar sem alarme exato, **remova
-`SCHEDULE_EXACT_ALARM` do `app.json` antes de submeter** — é uma dor de cabeça
-de revisão a menos. O spike o declara só para permitir comparar os dois modos.
+**Good news: Junto does not need exact alarms.** The product already wants ±30min
+jitter so answering never becomes automatic. An inexact alarm lands inside that
+window anyway. If the test passes without exact alarms, **remove
+`SCHEDULE_EXACT_ALARM` from `app.json` before submitting** — one review headache
+fewer. The spike declares it only so both modes can be compared.
 
-**Reboot.** O expo-notifications registra um receiver de `BOOT_COMPLETED` e
-reagenda sozinho. Isso é exatamente o que o dia 3 do protocolo testa — nunca
-confie sem medir.
+**Reboot.** expo-notifications registers a `BOOT_COMPLETED` receiver and
+reschedules on its own. That is exactly what day 3 of the protocol tests — never
+trust it without measuring.
 
-**Fabricantes.** Xiaomi (MIUI/HyperOS), Samsung, Oppo, Vivo e Huawei mantêm
-listas próprias de apps "otimizados" que vão além do Doze do Android puro. O
-sintoma típico: funciona no dia 1 e some a partir do dia 2. Ver
-[dontkillmyapp.com](https://dontkillmyapp.com) para o passo a passo por marca.
+**Manufacturers.** Xiaomi (MIUI/HyperOS), Samsung, Oppo, Vivo and Huawei keep
+their own lists of "optimised" apps that go beyond stock Android's Doze. The
+typical symptom: works on day 1 and vanishes from day 2. See
+[dontkillmyapp.com](https://dontkillmyapp.com) for the per-brand steps.
 
-## O que pedir ao usuário no onboarding
+## What to ask the user during onboarding
 
-_(Preencher depois do teste — só peça o que se mostrar necessário. Cada pedido
-de permissão é atrito, e atrito no onboarding é o maior risco de dropout do
-projeto.)_
+_(Fill in after the test — only ask for what turns out to be necessary. Every
+permission prompt is friction, and friction in onboarding is the project's
+biggest dropout risk.)_
 
-Candidatos:
+Candidates:
 
-- Permissão de notificação — inevitável
-- "Não otimizar bateria para o Junto" — o spike já tem o botão que abre a tela certa
-- Xiaomi: "Início automático" (Autostart) precisa ser ligado manualmente
-- Samsung: tirar o app de "Apps em suspensão"
+- Notification permission — unavoidable
+- "Do not optimise battery for Junto" — the spike already has the button that opens the right screen
+- Xiaomi: "Autostart" has to be enabled by hand
+- Samsung: remove the app from "Sleeping apps"
 
-Redação a definir com o tom do projeto: explicar **por que**, nunca só pedir.
-Algo como "pra eu conseguir te chamar na hora certa, o Android precisa que você
-libere isso aqui" — e um jeito de pular, porque um app que trava no pedido de
-permissão perde a pessoa ali.
+Wording to be settled in the project's voice: explain **why**, never just ask.
+Something like "so I can reach you at the right time, Android needs you to allow
+this" — and a way to skip, because an app that gets stuck on a permission prompt
+loses the person right there.
 
-## Se reprovar: plano B
+## If it fails: plan B
 
-FCM + Supabase Edge Function com cron.
+FCM plus a Supabase Edge Function on a cron.
 
-- O servidor guarda o token de push e os horários de cada UUID
-- Um cron dispara de hora em hora e envia para quem tem EMA naquela janela
-- Mais confiável (o push chega pelo Google Play Services, que nenhum fabricante mata)
-- Custa mais: exige token de push por aparelho, tratamento de token expirado, e
-  o servidor passa a saber **quando** cada pessoa é notificada
+- The server stores the push token and each UUID's schedule
+- A cron fires hourly and sends to whoever has an EMA in that window
+- More reliable (push arrives via Google Play Services, which no manufacturer kills)
+- Costs more: a push token per device, expired-token handling, and the server now
+  knows **when** each person is notified
 
-**Decidir aqui, não depois.** Trocar a arquitetura de notificação com o app
-pronto significa refazer o agendamento, o follow-up de 30 minutos e o offline.
+**Decide here, not later.** Swapping the notification architecture with the app
+finished means redoing the scheduling, the 30-minute follow-up and the offline path.

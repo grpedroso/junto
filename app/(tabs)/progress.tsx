@@ -55,7 +55,7 @@ export default function Progress() {
             : t('progress.days_without_betting')}
         </Label>
         {total > 0 && (
-          <Text className="pt-1 text-center text-sm text-tinta-suave">
+          <Text className="pt-1 text-center text-sm text-ink-soft">
             {t('progress.running_total', { n: total })}
           </Text>
         )}
@@ -89,7 +89,7 @@ export default function Progress() {
           <Heading className="text-lg">{t('progress.plans_title')}</Heading>
           {bestPlans.map((p) => (
             <Card key={p.id} className="gap-1">
-              <Text className="text-base text-tinta">
+              <Text className="text-base text-ink">
                 Quando {p.condition}, eu vou {p.action}.
               </Text>
               <Label>
@@ -101,8 +101,8 @@ export default function Progress() {
       )}
 
       {retake && (
-        <Card className="gap-3 bg-calma-clara">
-          <Body className="text-tinta">{t('pgsi.retake')}</Body>
+        <Card className="gap-3 bg-calm-light">
+          <Body className="text-ink">{t('pgsi.retake')}</Body>
           <Button
             variant="secondary"
             label={t('pgsi.title')}

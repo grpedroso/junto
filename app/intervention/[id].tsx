@@ -77,18 +77,18 @@ export default function Intervention() {
         {plan ? (
           <>
             <Body>{t('intervention.subtitle')}</Body>
-            <Card className="gap-1 bg-junto-claro p-6">
-              <Body className="text-xl text-tinta">
+            <Card className="gap-1 bg-junto-light p-6">
+              <Body className="text-xl text-ink">
                 {t('intervention.when', { condition: plan.condition })}
               </Body>
-              <Body className="text-xl font-bold text-junto-escuro">
+              <Body className="text-xl font-bold text-junto-dark">
                 {t('intervention.then', { action: plan.action })}
               </Body>
             </Card>
           </>
         ) : (
-          <Card className="bg-junto-claro p-6">
-            <Body className="text-xl text-tinta">{t('intervention.no_plan')}</Body>
+          <Card className="bg-junto-light p-6">
+            <Body className="text-xl text-ink">{t('intervention.no_plan')}</Body>
           </Card>
         )}
       </View>

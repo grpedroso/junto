@@ -47,9 +47,9 @@ export function PgsiQuestionnaire({ onFinish, onSkip }: Props) {
             accessibilityRole="radio"
             accessibilityState={{ checked: answers[item] === value }}
             onPress={() => answer(value)}
-            className="min-h-14 justify-center rounded-2xl border border-borda bg-superficie px-4 active:opacity-70"
+            className="min-h-14 justify-center rounded-2xl border border-line bg-surface px-4 active:opacity-70"
           >
-            <Text className="text-base text-tinta">{ptBR.pgsi.options[value]}</Text>
+            <Text className="text-base text-ink">{ptBR.pgsi.options[value]}</Text>
           </Pressable>
         ))}
       </View>

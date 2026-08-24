@@ -42,7 +42,7 @@ export function Resources({ urgentOnly = false }: { urgentOnly?: boolean }) {
       {list.map((r) => (
         <Card key={r.key} className="flex-row items-center justify-between gap-3">
           <View className="flex-1 gap-1">
-            <Text className="text-lg font-semibold text-tinta">{t(`help.${r.key}_name`)}</Text>
+            <Text className="text-lg font-semibold text-ink">{t(`help.${r.key}_name`)}</Text>
             <Label>{t(`help.${r.key}_desc`)}</Label>
           </View>
 
@@ -79,7 +79,7 @@ const Action = ({
     accessibilityRole="button"
     accessibilityLabel={label}
     onPress={onPress}
-    className="h-12 w-12 items-center justify-center rounded-full bg-junto-claro active:opacity-70"
+    className="h-12 w-12 items-center justify-center rounded-full bg-junto-light active:opacity-70"
   >
     <Ionicons name={icon} size={20} color="#175647" />
   </Pressable>

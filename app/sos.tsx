@@ -28,7 +28,7 @@ export default function Sos() {
     <FixedScreen>
       <View className="flex-1 justify-center gap-3">
         <Heading className="text-4xl">{t('sos.title')}</Heading>
-        <Text className="text-lg text-tinta-suave">{t('sos.subtitle')}</Text>
+        <Text className="text-lg text-ink-soft">{t('sos.subtitle')}</Text>
       </View>
 
       <View className="gap-3">
@@ -83,10 +83,10 @@ function Breathing({ onLeave }: { onLeave: () => void }) {
       <View className="flex-1 items-center justify-center gap-10">
         <Animated.View
           style={{ transform: [{ scale }] }}
-          className="h-40 w-40 rounded-full bg-junto-claro"
+          className="h-40 w-40 rounded-full bg-junto-light"
         />
         <View className="items-center gap-1">
-          <Text className="text-2xl font-semibold text-tinta">{t(current.key)}</Text>
+          <Text className="text-2xl font-semibold text-ink">{t(current.key)}</Text>
           <Text className="text-5xl font-bold text-junto">{Math.max(remaining, 0)}</Text>
         </View>
       </View>

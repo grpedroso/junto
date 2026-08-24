@@ -1,95 +1,102 @@
 # Junto
 
-App de apoio a quem quer parar de apostar. A ideia é simples: chegar no momento
-certo, com o plano que a própria pessoa escreveu antes, quando ela estava calma.
+An app for people who want to stop gambling. The idea is simple: show up at the
+right moment with the plan the person wrote themselves, back when they were calm.
 
-> **O Junto não é serviço de emergência.** Ninguém monitora as respostas em tempo
-> real. Se você precisa falar com alguém agora: **CVV 188** (gratuito, 24h,
-> sigiloso, também em [cvv.org.br](https://cvv.org.br)) ou **SAMU 192**.
+The app is in Brazilian Portuguese, for Brazil. The code and the docs are in
+English. *Junto* means "together" — the name is the promise.
 
-## O que é
+> **Junto is not an emergency service.** Nobody reads the answers in real time.
+> If you need to talk to someone right now, in Brazil: **CVV 188** (free, 24h,
+> confidential, also at [cvv.org.br](https://cvv.org.br)) or **SAMU 192**.
 
-Uma [JITAI](https://doi.org/10.1007/s10899-023-10250-x) — *Just-In-Time Adaptive
-Intervention*. Três vezes por dia o app pergunta seis coisas rápidas. Quando a
-vontade está alta ou a sensação de conseguir resistir está baixa, ele mostra o
-plano de enfrentamento que a pessoa criou para aquele gatilho.
+## What it is
 
-Craving e autoeficácia momentâneos são os dois preditores que a literatura
-confirma operarem em tempo real. Expectativa de ganho não prevê — por isso não
-está no questionário.
+A [JITAI](https://doi.org/10.1007/s10899-023-10250-x) — a *Just-In-Time Adaptive
+Intervention*. Three times a day the app asks six quick questions. When craving
+runs high or the sense of being able to resist runs low, it shows the coping plan
+the person wrote for that trigger.
 
-## O que não é
+Momentary craving and self-efficacy are the two predictors the literature
+confirms operate in real time. Expected winnings do not predict anything — which
+is why they are not in the questionnaire.
 
-- Não é bloqueador de sites ou apps (isso já é bem servido por Stopou, BetBlocker, Gamban)
-- Não é cassino simulado
-- Não faz triagem de risco suicida — oferece **rota para ajuda**, não avaliação
-- Não julga, não usa linguagem de fracasso, não zera contador com culpa
+## What it is not
 
-## Estado
+- Not a site or app blocker (Stopou, BetBlocker and Gamban already do that well)
+- Not a simulated casino
+- It does not screen for suicide risk — it offers a **route to help**, not an assessment
+- It does not judge, does not use the language of failure, and does not reset a counter out of guilt
 
-Em construção. Nada publicado ainda. O maior risco técnico — Android matar as
-notificações em background — está sendo validado antes do resto: veja
+## State
+
+Under construction. Nothing published. The biggest technical risk — Android
+killing background notifications — is being validated before anything else: see
 [NOTIFICATIONS.md](NOTIFICATIONS.md).
 
-## Rodar
+## Running it
 
-Precisa de Node 20+ e um celular Android.
+You need Node 20+ and an Android phone.
 
 ```bash
 npm install
-npx expo start          # aponte a câmera para o QR com o Expo Go aberto
+npx expo start          # point the camera at the QR code with Expo Go open
 ```
 
-Sem `.env` o app sobe em **modo local**: a conta anônima é criada no próprio
-aparelho e nada sincroniza. Serve para navegar as telas e testar a regra de
-disparo antes de existir backend. Quando o projeto Supabase existir:
+With no `.env` the app comes up in **local mode**: the anonymous account is
+created on the device and nothing syncs. That is enough to walk the screens and
+exercise the trigger rule before a backend exists. Once the Supabase project is
+there:
 
 ```bash
-cp .env.example .env    # preencha URL e anon key
+cp .env.example .env    # fill in URL and anon key
 npm run types:gen
 ```
 
-**Para testar notificação, Expo Go não serve** — matar o Expo Go mata o
-agendamento junto, então o teste mede outra coisa. Use um build de
-desenvolvimento:
+**Expo Go is no good for testing notifications** — killing Expo Go kills the
+scheduling with it, so the test measures something else. Use a development build:
 
 ```bash
 npx eas build --platform android --profile development
 ```
 
-Emulador também não serve para notificação (o spike se recusa a validar em um).
-Para as demais telas, emulador está de bom tamanho.
+An emulator is no good for notifications either (the Phase 0 spike refuses to
+validate on one). For every other screen an emulator is fine.
 
-### Testes
+### Tests
 
 ```bash
 npm test
 ```
 
-O que importa está em `src/domain/` — TypeScript puro, sem React e sem I/O. É
-onde mora a regra de disparo e o escore do PGSI, e é o que dá para validar sem
-subir o app.
+What matters lives in `src/domain/` — pure TypeScript, no React and no I/O. That
+is where the trigger rule and the PGSI scoring live, and it is what can be
+validated without launching the app.
 
-## Estrutura
+## Layout
 
 ```
-app/          rotas (expo-router)
+app/          routes (expo-router)
 src/
-  domain/     regra de disparo, PGSI, jitter — puro, testável
-  lib/        supabase, notificações, storage
-  i18n/       todas as strings; zero texto hardcoded na UI
+  domain/     trigger rule, PGSI, jitter — pure, testable
+  lib/        supabase, notifications, storage
+  i18n/       every string; no hardcoded text in the UI
   components/
 supabase/
   migrations/
 ```
 
-## Contribuir
+Keys in `src/i18n/pt-BR.ts` are English; the values are Brazilian Portuguese and
+stay that way. They are the product.
 
-Leia o [CONTRIBUTING.md](CONTRIBUTING.md) antes. A regra que não se quebra:
-**qualquer mudança em texto que a pessoa lê num momento de vulnerabilidade
-precisa de revisão clínica** — abra com a label `clinico`.
+## Contributing
 
-## Licença
+Read [CONTRIBUTING.md](CONTRIBUTING.md) first. The rule that does not bend:
+**any change to text a person reads in a moment of vulnerability needs clinical
+review** — open it with the `clinico` label.
 
-[AGPL-3.0](LICENSE). A escolha é deliberada: impede que alguém pegue o código,
-feche e monetize em cima de pessoas vulneráveis. O risco é real neste nicho.
+## Licence
+
+[AGPL-3.0](LICENSE). The choice is deliberate: it stops anyone taking the code,
+closing it and monetising it on top of vulnerable people. That risk is real in
+this niche.

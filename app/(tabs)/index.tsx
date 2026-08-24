@@ -64,7 +64,7 @@ export default function Today() {
             : t('progress.days_without_betting')}
         </Label>
         {total > 0 && (
-          <Text className="pt-2 text-center text-sm text-tinta-suave">
+          <Text className="pt-2 text-center text-sm text-ink-soft">
             {t('progress.running_total', { n: total })}
           </Text>
         )}
@@ -75,10 +75,10 @@ export default function Today() {
       <Pressable
         accessibilityRole="button"
         onPress={() => router.push('/sos')}
-        className="min-h-16 items-center justify-center rounded-2xl border-2 border-junto bg-superficie active:opacity-70"
+        className="min-h-16 items-center justify-center rounded-2xl border-2 border-junto bg-surface active:opacity-70"
       >
         <Text className="text-xl font-bold text-junto">{t('sos.button')}</Text>
-        <Text className="text-sm text-tinta-suave">{t('sos.title')}</Text>
+        <Text className="text-sm text-ink-soft">{t('sos.title')}</Text>
       </Pressable>
 
       {profile?.baselinePgsi === null && (

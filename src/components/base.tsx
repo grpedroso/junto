@@ -6,7 +6,7 @@ type ChildrenOnly = { children: ReactNode; className?: string };
 
 export function Screen({ children, className = '' }: ChildrenOnly) {
   return (
-    <SafeAreaView className="flex-1 bg-fundo" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-canvas" edges={['top', 'bottom']}>
       <ScrollView
         contentContainerClassName={`px-5 pt-4 pb-10 gap-4 ${className}`}
         keyboardShouldPersistTaps="handled"
@@ -20,30 +20,30 @@ export function Screen({ children, className = '' }: ChildrenOnly) {
 /** No scroll: for the EMA and the intervention, where scrolling is friction. */
 export function FixedScreen({ children, className = '' }: ChildrenOnly) {
   return (
-    <SafeAreaView className="flex-1 bg-fundo" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-canvas" edges={['top', 'bottom']}>
       <View className={`flex-1 px-5 pt-4 pb-6 ${className}`}>{children}</View>
     </SafeAreaView>
   );
 }
 
 export const Heading = ({ children, className = '' }: ChildrenOnly) => (
-  <Text className={`text-2xl font-bold text-tinta ${className}`}>{children}</Text>
+  <Text className={`text-2xl font-bold text-ink ${className}`}>{children}</Text>
 );
 
 export const Question = ({ children, className = '' }: ChildrenOnly) => (
-  <Text className={`text-pergunta font-semibold text-tinta ${className}`}>{children}</Text>
+  <Text className={`text-question font-semibold text-ink ${className}`}>{children}</Text>
 );
 
 export const Body = ({ children, className = '' }: ChildrenOnly) => (
-  <Text className={`text-base leading-6 text-tinta-suave ${className}`}>{children}</Text>
+  <Text className={`text-base leading-6 text-ink-soft ${className}`}>{children}</Text>
 );
 
 export const Label = ({ children, className = '' }: ChildrenOnly) => (
-  <Text className={`text-sm text-tinta-suave ${className}`}>{children}</Text>
+  <Text className={`text-sm text-ink-soft ${className}`}>{children}</Text>
 );
 
 export const Card = ({ children, className = '' }: ChildrenOnly) => (
-  <View className={`rounded-2xl border border-borda bg-superficie p-4 ${className}`}>
+  <View className={`rounded-2xl border border-line bg-surface p-4 ${className}`}>
     {children}
   </View>
 );
@@ -65,14 +65,14 @@ export function Button({
 }: ButtonProps) {
   const background = {
     primary: 'bg-junto',
-    secondary: 'bg-junto-claro',
+    secondary: 'bg-junto-light',
     quiet: 'bg-transparent',
   }[variant];
 
   const color = {
     primary: 'text-white',
-    secondary: 'text-junto-escuro',
-    quiet: 'text-tinta-suave',
+    secondary: 'text-junto-dark',
+    quiet: 'text-ink-soft',
   }[variant];
 
   return (
@@ -112,10 +112,10 @@ export function Chips({ items, selected, onToggle, className = '' }: ChipsProps)
             accessibilityState={{ checked: on }}
             onPress={() => onToggle(item.value)}
             className={`min-h-12 justify-center rounded-full border px-4 ${
-              on ? 'border-junto bg-junto-claro' : 'border-borda bg-superficie'
+              on ? 'border-junto bg-junto-light' : 'border-line bg-surface'
             }`}
           >
-            <Text className={on ? 'font-semibold text-junto-escuro' : 'text-tinta'}>
+            <Text className={on ? 'font-semibold text-junto-dark' : 'text-ink'}>
               {item.label}
             </Text>
           </Pressable>
@@ -131,7 +131,7 @@ export function Steps({ step, total }: { step: number; total: number }) {
       {Array.from({ length: total }, (_, i) => (
         <View
           key={i}
-          className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-junto' : 'bg-borda'}`}
+          className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-junto' : 'bg-line'}`}
         />
       ))}
     </View>

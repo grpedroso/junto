@@ -36,7 +36,7 @@ export default function ChooseTimes() {
         {times.map((time, i) => (
           <Card key={i} className="flex-row items-center justify-between">
             <Nudge label="−" onPress={() => shift(i, -1)} />
-            <Text className="text-3xl font-bold text-tinta">
+            <Text className="text-3xl font-bold text-ink">
               {pad(time.hour)}:{pad(time.minute)}
             </Text>
             <Nudge label="+" onPress={() => shift(i, 1)} />
@@ -53,8 +53,8 @@ const Nudge = ({ label, onPress }: { label: string; onPress: () => void }) => (
   <Pressable
     accessibilityRole="button"
     onPress={onPress}
-    className="h-12 w-12 items-center justify-center rounded-full bg-junto-claro active:opacity-70"
+    className="h-12 w-12 items-center justify-center rounded-full bg-junto-light active:opacity-70"
   >
-    <Text className="text-2xl font-bold text-junto-escuro">{label}</Text>
+    <Text className="text-2xl font-bold text-junto-dark">{label}</Text>
   </Pressable>
 );

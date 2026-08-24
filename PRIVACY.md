@@ -1,3 +1,11 @@
+<!--
+  This file stays in Brazilian Portuguese on purpose, unlike the rest of the
+  docs. It is not developer documentation: it is the privacy policy shown to the
+  people whose data it covers, linked from the app's Settings screen, and it has
+  to satisfy the LGPD for a Brazilian audience. Translating it would make it
+  unreadable to its actual readers.
+-->
+
 # Política de privacidade — Junto
 
 **Rascunho.** Precisa de revisão antes de ir para uma URL pública (a Play Store

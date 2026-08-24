@@ -4,8 +4,9 @@ const path = require('path');
 
 const config = getDefaultConfig(__dirname);
 
-// spike-notif e um segundo projeto Expo dentro do repo. Sem isto o Metro acha
-// dois package.json e duas copias de react-native, e o bundle do app quebra.
+// spike-notif is a second Expo project inside the repo. Without this, Metro
+// finds two package.json files and two copies of react-native, and the app
+// bundle breaks.
 config.resolver.blockList = [new RegExp(`^${path.resolve(__dirname, 'spike-notif').replace(/[\\]/g, '\\\\')}\\.*`)];
 
 module.exports = withNativeWind(config, { input: './global.css' });

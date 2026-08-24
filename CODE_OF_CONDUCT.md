@@ -1,52 +1,51 @@
-# Código de conduta
+# Code of conduct
 
-## Nosso compromisso
+## Our pledge
 
-Este projeto existe para ajudar pessoas em situação de vulnerabilidade. O
-espaço em volta dele precisa ser coerente com isso.
+This project exists to help people in a vulnerable situation. The space around
+it has to be consistent with that.
 
-Nós, participantes e mantenedores, nos comprometemos a fazer da participação
-uma experiência livre de assédio para todo mundo, independentemente de idade,
-corpo, deficiência, etnia, identidade e expressão de gênero, nível de
-experiência, nacionalidade, aparência, raça, religião, orientação sexual,
-classe social, ou **histórico com jogo, dependência ou saúde mental**.
+We as contributors and maintainers pledge to make participation a
+harassment-free experience for everyone, regardless of age, body, disability,
+ethnicity, gender identity and expression, level of experience, nationality,
+appearance, race, religion, sexual orientation, social class, or **history with
+gambling, addiction or mental health**.
 
-## Comportamento esperado
+## Expected behaviour
 
-- Linguagem acolhedora e inclusiva
-- Respeito a pontos de vista e experiências diferentes
-- Aceitar crítica construtiva com elegância
-- Foco no que é melhor para quem vai usar o app
-- Empatia com quem está contando algo difícil da própria vida
+- Welcoming and inclusive language
+- Respect for differing viewpoints and experiences
+- Accepting constructive criticism gracefully
+- Focusing on what is best for the people who will use the app
+- Empathy with anyone sharing something difficult from their own life
 
-## Comportamento inaceitável
+## Unacceptable behaviour
 
-- Assédio público ou privado, em qualquer forma
-- Linguagem ou imagem sexualizada
-- Comentários ofensivos sobre identidade, características pessoais ou política
-- Publicar informação privada de terceiros sem permissão explícita
-- **Julgar, moralizar ou culpabilizar quem tem ou teve problema com jogo** —
-  aqui isso é falta grave, não apenas má-educação
-- Promover casas de aposta, jogos de azar ou "métodos" de aposta em qualquer
-  espaço do projeto
+- Harassment, public or private, in any form
+- Sexualised language or imagery
+- Insulting remarks about identity, personal characteristics or politics
+- Publishing someone else's private information without explicit permission
+- **Judging, moralising about or blaming people who have or had a gambling
+  problem** — here that is a serious offence, not merely rudeness
+- Promoting betting houses, gambling or betting "systems" anywhere in the
+  project's spaces
 
-## Escopo
+## Scope
 
-Vale em todos os espaços do projeto — issues, PRs, discussions — e quando
-alguém representa o projeto publicamente.
+Applies in all project spaces — issues, PRs, discussions — and whenever someone
+represents the project in public.
 
-## Aplicação
+## Enforcement
 
-Denúncias podem ser enviadas para o contato listado em
-[SECURITY.md](SECURITY.md). Todas serão analisadas e respondidas de forma
-apropriada à situação, com confidencialidade de quem reportou.
+Reports can be sent to the contact listed in [SECURITY.md](SECURITY.md). All
+reports will be reviewed and answered in a way appropriate to the situation,
+with confidentiality for the reporter.
 
-Mantenedores que não seguirem ou não aplicarem este código de boa-fé podem
-sofrer repercussões temporárias ou permanentes, definidas pelos demais
-mantenedores.
+Maintainers who do not follow or enforce this code in good faith may face
+temporary or permanent repercussions as decided by the other maintainers.
 
-## Atribuição
+## Attribution
 
-Adaptado do [Contributor Covenant](https://www.contributor-covenant.org),
-versão 2.1, disponível em
+Adapted from the [Contributor Covenant](https://www.contributor-covenant.org),
+version 2.1, available at
 https://www.contributor-covenant.org/version/2/1/code_of_conduct.html

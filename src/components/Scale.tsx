@@ -31,8 +31,8 @@ export function Scale({ value, onChange, minLabel, maxLabel, accessibilityLabel 
         style={{ height: 48 }}
       />
       <View className="flex-row justify-between">
-        <Text className="text-sm text-tinta-suave">{minLabel}</Text>
-        <Text className="text-sm text-tinta-suave">{maxLabel}</Text>
+        <Text className="text-sm text-ink-soft">{minLabel}</Text>
+        <Text className="text-sm text-ink-soft">{maxLabel}</Text>
       </View>
     </View>
   );

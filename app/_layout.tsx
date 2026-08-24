@@ -66,7 +66,7 @@ export default function RootLayout() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-fundo">
+      <View className="flex-1 items-center justify-center bg-canvas">
         <ActivityIndicator color="#1F6F5C" />
       </View>
     );

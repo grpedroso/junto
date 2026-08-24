@@ -44,7 +44,7 @@ export default function ChoosePlans() {
 
       {CATEGORIES.map((category) => (
         <View key={category} className="gap-2">
-          <Text className="text-sm font-semibold uppercase text-tinta-suave">
+          <Text className="text-sm font-semibold uppercase text-ink-soft">
             {t(`plans.category.${category}`)}
           </Text>
           {LIBRARY.filter((template) => template.category === category).map((template) => {
@@ -57,10 +57,10 @@ export default function ChoosePlans() {
                 accessibilityState={{ checked: on }}
                 onPress={() => toggle(template.id)}
                 className={`rounded-2xl border p-4 active:opacity-70 ${
-                  on ? 'border-junto bg-junto-claro' : 'border-borda bg-superficie'
+                  on ? 'border-junto bg-junto-light' : 'border-line bg-surface'
                 }`}
               >
-                <Text className="text-base text-tinta">
+                <Text className="text-base text-ink">
                   Quando <Text className="font-semibold">{text.condition}</Text>, eu vou{' '}
                   <Text className="font-semibold">{text.action}</Text>.
                 </Text>

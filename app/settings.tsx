@@ -53,7 +53,7 @@ export default function Settings() {
 
       <Card className="gap-1">
         <Label>{t('settings.times')}</Label>
-        <Text className="text-lg text-tinta">
+        <Text className="text-lg text-ink">
           {profile?.times.map((time) => `${pad(time.hour)}:${pad(time.minute)}`).join('  ·  ')}
         </Text>
       </Card>

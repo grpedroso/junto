@@ -51,7 +51,7 @@ export default function Plans() {
 
       {plans.map((p) => (
         <Card key={p.id} className="gap-3">
-          <Text className="text-base text-tinta">
+          <Text className="text-base text-ink">
             Quando <Text className="font-semibold">{p.condition}</Text>, eu vou{' '}
             <Text className="font-semibold">{p.action}</Text>.
           </Text>
@@ -89,9 +89,9 @@ export default function Plans() {
                 key={template.id}
                 accessibilityRole="button"
                 onPress={() => void adoptTemplate(template.id)}
-                className="rounded-2xl border border-borda bg-superficie p-4 active:opacity-70"
+                className="rounded-2xl border border-line bg-surface p-4 active:opacity-70"
               >
-                <Text className="text-base text-tinta">
+                <Text className="text-base text-ink">
                   Quando {text.condition}, eu vou {text.action}.
                 </Text>
                 <Label className="pt-1 text-junto">{t('plans.adopt')}</Label>
@@ -139,7 +139,7 @@ function Editor({
           placeholder={t('plans.condition_hint')}
           placeholderTextColor="#8FA39D"
           multiline
-          className="min-h-14 rounded-2xl border border-borda bg-superficie px-4 py-3 text-base text-tinta"
+          className="min-h-14 rounded-2xl border border-line bg-surface px-4 py-3 text-base text-ink"
         />
       </View>
 
@@ -151,7 +151,7 @@ function Editor({
           placeholder={t('plans.action_hint')}
           placeholderTextColor="#8FA39D"
           multiline
-          className="min-h-14 rounded-2xl border border-borda bg-superficie px-4 py-3 text-base text-tinta"
+          className="min-h-14 rounded-2xl border border-line bg-surface px-4 py-3 text-base text-ink"
         />
       </View>
 

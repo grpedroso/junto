@@ -1,76 +1,83 @@
-# Como contribuir
+# Contributing
 
-Obrigado por olhar. Este é um projeto sem fins lucrativos, de dev solo, e ajuda
-é bem-vinda — principalmente de quem entende de dependência de jogo, de quem já
-passou por isso, e de quem sabe testar Android de verdade.
+Thanks for looking. This is a non-profit, solo-dev project and help is welcome —
+especially from people who understand gambling addiction, people who have lived
+it, and people who know how to test Android properly.
 
-## A regra que não se quebra: revisão clínica
+**Language:** code, comments, docs and issues in English. The strings the user
+reads are Brazilian Portuguese and stay in `src/i18n/pt-BR.ts` — they are the
+product, not translatable filler.
 
-**Qualquer PR que mude texto que a pessoa lê num momento de vulnerabilidade não
-é mergeado sem revisão clínica.** Isso inclui:
+## The rule that does not bend: clinical review
 
-- Textos da tela de cuidado (`app/cuidado.tsx`)
-- Textos da tela de intervenção e do follow-up
-- Perguntas e opções da EMA
-- Itens e faixas do PGSI
-- O limiar da regra de disparo (`src/domain/ema.ts`)
-- Qualquer copy sobre recaída, progresso ou streak
+**No PR that changes text a person reads in a moment of vulnerability gets
+merged without clinical review.** That includes:
 
-Marque o PR com a label `clinico`. Se não tiver certeza se o seu caso entra,
-marque mesmo assim — o custo de marcar à toa é zero.
+- The care screen (`app/care.tsx`)
+- The intervention and follow-up copy
+- The EMA questions and their options
+- The PGSI items and bands
+- The trigger threshold (`src/domain/ema.ts`)
+- Any copy about relapse, progress or streaks
 
-### Regras de linguagem, inegociáveis
+Tag the PR with the `clinico` label. If you are not sure whether yours counts,
+tag it anyway — a false positive costs nothing.
 
-| ❌ Nunca | ✅ Em vez disso |
+### Language rules, non-negotiable
+
+These examples are in Portuguese because they are the actual strings, not
+illustrations.
+
+| ❌ Never | ✅ Instead |
 |---|---|
-| "Você recaiu" | "Aconteceu. Bora de novo." |
+| "Você recaiu" (*you relapsed*) | "Aconteceu. Bora de novo." (*it happened, let's go again*) |
 | "Você falhou em atingir sua meta" | "Semana difícil. Isso acontece." |
 | "Parabéns pelos seus 7 dias de abstinência!" | "7 dias. Tá firme." |
 | "Detectamos comportamento de risco" | "Parece que hoje tá puxado" |
 
-- **Nunca** mencionar métodos de autolesão — nem no formato "remova o acesso a X"
-- **Nunca** alarme visual (vermelho, ícone de perigo) na tela de cuidado
-- Recaída é **recomeço**: o contador registra e segue, não pune
-- Tela de cuidado nunca bloqueia o app nem força ação
+- **Never** mention self-harm methods — not even as "remove your access to X"
+- **Never** a visual alarm (red, danger icon) on the care screen
+- A relapse is a **fresh start**: the counter records and moves on, it does not punish
+- The care screen never blocks the app and never forces an action
 
-Tom: direto, brasileiro, informal, do lado da pessoa. Não é clínico, não é
-professoral, não é motivacional-genérico, não é infantilizado.
+Voice: direct, Brazilian, informal, on the person's side. Not clinical, not
+professorial, not generically motivational, not patronising.
 
-## Privacidade não é negociável
+## Privacy is not negotiable
 
-O app é anônimo por construção. Um PR **não pode**:
+The app is anonymous by construction. A PR **must not**:
 
-- Adicionar coluna ou campo com nome, e-mail, telefone, CPF ou qualquer PII
-- Guardar valor exato de aposta — só faixa (`amount_band`)
-- Adicionar geolocalização
-- Criar tabela sem RLS
-- Mandar resposta de EMA para log, crash report ou serviço de terceiros
+- Add a column or field with a name, email, phone, national id or any PII
+- Store an exact bet amount — bands only (`amount_band`)
+- Add geolocation
+- Create a table without RLS
+- Send an EMA answer to a log, a crash report or any third-party service
 
-Marque com a label `privacidade` qualquer PR que toque em dado de usuário.
+Tag anything that touches user data with the `privacidade` label.
 
-## Fluxo
+## Flow
 
-1. Abra uma issue antes de mexer em algo grande — evita trabalho jogado fora
-2. Branch a partir de `main`
-3. `npm test` passando
-4. `npx tsc --noEmit` limpo
-5. Nenhuma string nova hardcoded na UI — tudo em `src/i18n/pt-BR.ts`
-6. PR pequeno e descrito em português
+1. Open an issue before starting anything large — it saves wasted work
+2. Branch from `main`
+3. `npm test` green
+4. `npx tsc --noEmit` clean
+5. No new hardcoded string in the UI — everything goes in `src/i18n/pt-BR.ts`
+6. Keep the PR small, and describe it in English
 
-## Onde a lógica mora
+## Where the logic lives
 
-`src/domain/` é TypeScript puro: sem React, sem I/O, sem `fetch`. É a regra
-clínica isolada do resto para poder ser testada e auditada. Se você precisa de
-rede ou de um hook do React lá dentro, o código provavelmente está no lugar
-errado.
+`src/domain/` is pure TypeScript: no React, no I/O, no `fetch`. It is the
+clinical rule kept apart from everything else so it can be tested and audited.
+If you find yourself needing a hook or the network in there, the code is
+probably in the wrong place.
 
-## O que ajuda muito
+## What helps a lot
 
-- Testar em aparelho de fabricante agressivo com bateria (Xiaomi, Samsung, Motorola) e relatar em [NOTIFICATIONS.md](NOTIFICATIONS.md)
-- Revisão de acessibilidade (contraste, leitor de tela)
-- Revisão de texto por quem trabalha com CAPS-AD ou pesquisa em jogo patológico
-- Tradução do PGSI-BR com a redação exata da adaptação publicada
+- Testing on a phone from a battery-aggressive maker (Xiaomi, Samsung, Motorola) and reporting in [NOTIFICATIONS.md](NOTIFICATIONS.md)
+- An accessibility pass (contrast, screen reader)
+- A copy review by someone working in a CAPS-AD or researching gambling disorder
+- The exact wording of the published Brazilian PGSI adaptation
 
-## Segurança
+## Security
 
-Vulnerabilidade não vai em issue pública. Veja [SECURITY.md](SECURITY.md).
+Vulnerabilities do not go in public issues. See [SECURITY.md](SECURITY.md).

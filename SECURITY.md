@@ -1,41 +1,42 @@
-# Política de segurança
+# Security policy
 
-Este app guarda dados de saúde de pessoas em situação de vulnerabilidade. Uma
-falha aqui não expõe "dados de usuário" genéricos — expõe que alguém tem
-problema com jogo, quanto apostou e em que estado emocional estava. Trate
-qualquer achado com esse peso.
+This app holds health data belonging to people in a vulnerable situation. A flaw
+here does not expose generic "user data" — it exposes that someone has a
+gambling problem, how much they bet and what emotional state they were in. Treat
+any finding with that weight.
 
-## Como reportar
+## Reporting
 
-**Não abra issue pública.**
+**Do not open a public issue.**
 
-Use o [Private Vulnerability Reporting do GitHub](https://github.com/grpedroso/junto/security/advisories/new)
-— aba **Security** → **Report a vulnerability**.
+Use [GitHub's private vulnerability reporting](https://github.com/grpedroso/junto/security/advisories/new)
+— the **Security** tab → **Report a vulnerability**.
 
-> TODO: incluir um e-mail de contato alternativo antes de tornar o repo público.
+> TODO: add an alternative contact email before the repo goes public.
 
-Responderemos em até 7 dias. Se o problema for confirmado, combinamos uma data
-de divulgação junto — preferimos corrigir e publicar o que aconteceu a esconder.
+We will respond within 7 days. If the problem is confirmed we will agree a
+disclosure date together — we would rather fix it and publish what happened than
+hide it.
 
-## O que nos interessa muito
+## What we care about most
 
-- Qualquer forma de ler dados de um `user_id` que não seja o seu (falha de RLS)
-- Vazamento de resposta de EMA em log, crash report, telemetria ou URL
-- Exposição da `service_role` key do Supabase
-- Correlação que permita reidentificar uma pessoa a partir dos dados anônimos
-- Qualquer PII que tenha entrado no schema sem ninguém notar
+- Any way to read data belonging to a `user_id` that is not yours (an RLS failure)
+- An EMA answer leaking into a log, crash report, telemetry or URL
+- Exposure of the Supabase `service_role` key
+- Any correlation that allows re-identifying a person from the anonymous data
+- Any PII that made it into the schema without anyone noticing
 
-## O que já sabemos
+## What we already know
 
-- O `EXPO_PUBLIC_SUPABASE_ANON_KEY` é público por construção. A proteção é a
-  RLS, não o segredo da chave. Se a RLS de uma tabela estiver faltando ou
-  frouxa, **isso** é a vulnerabilidade.
-- O app não tem login com senha. A identidade é um UUID anônimo guardado em
-  `expo-secure-store`. Quem tiver o aparelho desbloqueado tem os dados — isso é
-  aceito por decisão de produto (exigir senha afastaria usuário).
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY` is public by construction. The protection is
+  RLS, not the secrecy of the key. If a table's RLS is missing or loose, **that**
+  is the vulnerability.
+- The app has no password login. Identity is an anonymous UUID kept in
+  `expo-secure-store`. Whoever holds the unlocked device holds the data — that is
+  an accepted product decision, since requiring a password would drive users away.
 
-## Fora de escopo
+## Out of scope
 
-- Ataques que exigem acesso físico a aparelho desbloqueado
-- Engenharia social contra usuários
-- Falta de rate limit em endpoint público do Supabase sem impacto demonstrado
+- Attacks requiring physical access to an unlocked device
+- Social engineering against users
+- Missing rate limits on a public Supabase endpoint with no demonstrated impact

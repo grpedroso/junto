@@ -21,8 +21,8 @@ export default function Care() {
     <FixedScreen>
       <View className="flex-1 justify-center gap-4">
         <Heading className="text-3xl">{t('care.title')}</Heading>
-        <Card className="bg-calma-clara">
-          <Body className="text-lg text-tinta">{t('care.text')}</Body>
+        <Card className="bg-calm-light">
+          <Body className="text-lg text-ink">{t('care.text')}</Body>
         </Card>
         <Resources urgentOnly />
         <Body className="text-center">{t('care.reminder')}</Body>
