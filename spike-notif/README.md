@@ -4,7 +4,13 @@ Junto's disposable Phase 0 app. It exists to answer one question:
 **does Android deliver a scheduled notification on a real Brazilian phone, with
 the app closed, for three days running?**
 
-Not part of the app. Junto's `metro.config.js` blocks this folder.
+Not part of the app. Junto's `metro.config.js` blocks this folder, and this
+folder has its own `metro.config.js` so it does not inherit the app's.
+
+**It schedules exactly what the app schedules** — 21 days of one-shot `DATE`
+alarms with +-30 min of jitter, same channel importance, and no
+`SCHEDULE_EXACT_ALARM`. A probe that scheduled anything else would answer a
+question nobody asked.
 
 ```bash
 npm install

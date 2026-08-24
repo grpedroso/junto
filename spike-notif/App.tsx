@@ -23,6 +23,20 @@ const TIMES = [
   { hour: 21, minute: 0 },
 ];
 
+const JITTER_MINUTES = 30;
+const SCHEDULED_DAYS = 21;
+
+/**
+ * Copy of `withJitter` from the app's src/domain/ema.ts. The spike is a separate
+ * Expo project and cannot import from it, and a probe that schedules something
+ * other than what the product schedules measures the wrong thing.
+ */
+const withJitter = ({ hour, minute }: { hour: number; minute: number }) => {
+  const offset = Math.round((Math.random() * 2 - 1) * JITTER_MINUTES);
+  const total = (hour * 60 + minute + offset + 1440) % 1440;
+  return { hour: Math.floor(total / 60), minute: total % 60 };
+};
+
 type Event = {
   ts: number;
   kind: 'scheduled' | 'tray' | 'received' | 'tapped';
@@ -98,9 +112,9 @@ export default function App() {
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync(CHANNEL, {
           name: 'Avaliacoes',
-          importance: Notifications.AndroidImportance.MAX,
+          importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 250, 250],
-          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+          lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
           sound: 'default',
         });
       }
@@ -125,25 +139,44 @@ export default function App() {
     return () => current.forEach((s) => s.remove());
   }, [record, sweepTray, refreshScheduled]);
 
-  const scheduleDaily = async () => {
+  /**
+   * Mirrors `scheduleEmas` in the app: one-shot DATE alarms, 21 days ahead, each
+   * with +-30 min of jitter. Android's DAILY trigger is a fixed hour, so the
+   * product cannot use it -- and a spike that used it would be measuring a
+   * different native path than the one that ships.
+   */
+  const scheduleWindow = async () => {
     await Notifications.cancelAllScheduledNotificationsAsync();
-    for (const { hour, minute } of TIMES) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'E ai, como ta?',
-          body: '20 segundos, 6 perguntas.',
-          sound: 'default',
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour,
-          minute,
-          channelId: CHANNEL,
-        },
-      });
+    const now = new Date();
+    let count = 0;
+
+    for (let d = 0; d < SCHEDULED_DAYS; d++) {
+      for (const base of TIMES) {
+        const { hour, minute } = withJitter(base);
+        const when = new Date(now);
+        when.setDate(when.getDate() + d);
+        when.setHours(hour, minute, 0, 0);
+        if (when <= now) continue;
+
+        await Notifications.scheduleNotificationAsync({
+          identifier: 'ema:' + when.toISOString(),
+          content: {
+            title: 'E ai, como ta?',
+            body: '20 segundos, 6 perguntas.',
+            sound: 'default',
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: when,
+            channelId: CHANNEL,
+          },
+        });
+        count++;
+      }
     }
+
     await refreshScheduled();
-    await record('scheduled', '3 daily at 11:00, 17:00, 21:00');
+    await record('scheduled', count + ' one-shot alarms over ' + SCHEDULED_DAYS + ' days');
   };
 
   const scheduleTest = async () => {
@@ -209,7 +242,7 @@ export default function App() {
           )}
         </View>
 
-        <Button title="Schedule 3 daily (11:00 / 17:00 / 21:00)" onPress={scheduleDaily} />
+        <Button title="Schedule 21 days (3/day, +-30 min)" onPress={scheduleWindow} />
         <Button title="Test in 1 minute" onPress={scheduleTest} />
         <Button title="Check the tray now" onPress={check} />
         <Button title="Open battery optimisation" onPress={openBattery} />

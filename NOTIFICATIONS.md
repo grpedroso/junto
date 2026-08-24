@@ -29,7 +29,8 @@ What it does:
 
 - Asks for `POST_NOTIFICATIONS` (required on Android 13+)
 - Creates the `ema` channel with `AndroidImportance.MAX`
-- Schedules three daily notifications at 11:00 / 17:00 / 21:00
+- Schedules the same window the app schedules: 21 days of one-shot DATE alarms,
+  3 a day at 11:00 / 17:00 / 21:00 with +-30 min of jitter (63 in total)
 - Records every delivery in a persistent log (AsyncStorage) and shows the per-day count
 - A 60-second test button, to check the channel without waiting all day
 - A button that opens Android's battery optimisation screen directly
@@ -71,7 +72,7 @@ Three consecutive days, without opening the app outside the check-in times.
 - [ ] Preview APK installed on a **physical device** (not a development build)
 - [ ] At least **2 different manufacturers** — ideally including Xiaomi or Samsung
 - [ ] Notification permission granted (Android 13+ asks explicitly)
-- [ ] "Schedule 3 daily" pressed exactly once, on day 1
+- [ ] "Schedule 21 days" pressed exactly once, on day 1
 - [ ] App closed by swiping away (removed from recents) on day 1
 - [ ] Battery saver **on** — that is the real scenario, not the optimistic one
 - [ ] Device rebooted at the end of day 2, without reopening the app afterwards

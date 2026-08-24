@@ -17,8 +17,7 @@
       "permissions": [
         "POST_NOTIFICATIONS",
         "RECEIVE_BOOT_COMPLETED",
-        "WAKE_LOCK",
-        "SCHEDULE_EXACT_ALARM"
+        "WAKE_LOCK"
       ],
       "predictiveBackGestureEnabled": false
     },
