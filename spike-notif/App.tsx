@@ -25,6 +25,7 @@ const TIMES = [
 
 const JITTER_MINUTES = 30;
 const SCHEDULED_DAYS = 21;
+const REHEARSAL_MINUTES = [2, 5, 10];
 
 /**
  * Copy of `withJitter` from the app's src/domain/ema.ts. The spike is a separate
@@ -189,6 +190,53 @@ export default function App() {
     await record('scheduled', count + ' one-shot alarms over ' + SCHEDULED_DAYS + ' days');
   };
 
+  /**
+   * A ten-minute dress rehearsal of the three-day protocol, on the same DATE
+   * path the real window uses. It proves four things without waiting: the
+   * one-shot alarms register, they fire with the app swiped away, the tray
+   * sweep sees them, and the per-day tally adds up. Reboot right after pressing
+   * it and it also proves the BOOT_COMPLETED receiver restores one-shot alarms
+   * -- which is what day 3 asks.
+   *
+   * It cannot say anything about Doze or about day 2, and that is exactly why
+   * the three days still have to happen.
+   */
+  const scheduleRehearsal = async () => {
+    Alert.alert(
+      'Rehearsal',
+      'This cancels every scheduled alarm first. Do not press it during the ' +
+        'three-day run -- it would wipe the window.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Rehearse',
+          onPress: async () => {
+            await Notifications.cancelAllScheduledNotificationsAsync();
+            const now = Date.now();
+            for (const m of REHEARSAL_MINUTES) {
+              const when = new Date(now + m * 60_000);
+              await Notifications.scheduleNotificationAsync({
+                identifier: 'ema:rehearsal:' + when.toISOString(),
+                content: {
+                  title: 'Rehearsal +' + m + ' min',
+                  body: 'Same DATE path as the real window.',
+                  sound: 'default',
+                },
+                trigger: {
+                  type: Notifications.SchedulableTriggerInputTypes.DATE,
+                  date: when,
+                  channelId: CHANNEL,
+                },
+              });
+            }
+            await refreshScheduled();
+            await record('scheduled', 'rehearsal at +2, +5 and +10 min');
+          },
+        },
+      ]
+    );
+  };
+
   const scheduleTest = async () => {
     await Notifications.scheduleNotificationAsync({
       content: { title: 'One minute test', body: 'If this arrived, the channel works.' },
@@ -253,6 +301,7 @@ export default function App() {
         </View>
 
         <Button title="Schedule 21 days (3/day, +-30 min)" onPress={scheduleWindow} />
+        <Button title="Rehearsal: 3 alarms in 2 / 5 / 10 min" onPress={scheduleRehearsal} />
         <Button title="Test in 1 minute" onPress={scheduleTest} />
         <Button title="Check the tray now" onPress={check} />
         <Button title="Open battery optimisation" onPress={openBattery} />

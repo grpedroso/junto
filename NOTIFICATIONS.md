@@ -65,6 +65,29 @@ but it needs a Metro server on the same network to render anything — and the
 protocol ends by opening the app on day 3, alone, to read the delivery log. The
 preview APK embeds its bundle and opens standalone.
 
+## Rehearse it in ten minutes first
+
+Three days is a long time to find out the build was wrong. The **Rehearsal**
+button schedules three alarms at +2, +5 and +10 minutes on the same one-shot
+`DATE` path the real window uses, so a full dry run costs ten minutes:
+
+1. Press **Rehearsal**, confirm, and check the scheduled counter reads 3
+2. Swipe the app away from recents and put the phone down
+3. Optional, and worth it: **reboot now**. That is day 3's question — does the
+   `BOOT_COMPLETED` receiver restore one-shot alarms — answered in ten minutes
+4. Do not open the app until all three have arrived; do not dismiss them
+5. Open it and read "Deliveries per day". Three of three, on today's date, means
+   the whole chain works: scheduling, delivery with the app dead, the tray sweep
+   and the tally
+
+The rehearsal cannot say anything about Doze or about an OEM killing the app on
+day 2 — the phone is awake and the app was just used. That is precisely what the
+three days measure, and why they still have to happen.
+
+**Before the real run:** dismiss the rehearsal notifications from the tray, then
+press "Clear everything". Clearing while they are still in the tray makes the
+next sweep count them again as fresh deliveries.
+
 ## Test protocol
 
 Three consecutive days, without opening the app outside the check-in times.
