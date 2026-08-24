@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
-import { supabase } from './supabase';
-import { limparTudo } from './storage';
+import { supabase, temNuvem } from './supabase';
+import { limparTudo, novoId } from './storage';
 
 const CHAVE_UUID = 'junto.uuid';
 
@@ -12,6 +12,15 @@ const CHAVE_UUID = 'junto.uuid';
  * pessoa e, e nao saber e o ponto do produto. Isso esta dito no onboarding.
  */
 export async function garantirSessao(): Promise<string> {
+  // Modo local: o UUID nasce e morre no aparelho, sem servidor nenhum.
+  if (!temNuvem) {
+    const guardado = await SecureStore.getItemAsync(CHAVE_UUID);
+    if (guardado) return guardado;
+    const novo = novoId();
+    await SecureStore.setItemAsync(CHAVE_UUID, novo);
+    return novo;
+  }
+
   const { data: existente } = await supabase.auth.getSession();
   if (existente.session) {
     await SecureStore.setItemAsync(CHAVE_UUID, existente.session.user.id);
@@ -42,10 +51,12 @@ export async function usuarioAtual(): Promise<string | null> {
  * ficar com dado orfao no banco que ela nao consegue mais alcancar.
  */
 export async function apagarMeusDados(): Promise<void> {
-  const { error } = await supabase.rpc('delete_my_data');
-  if (error) throw new Error(`nao foi possivel apagar no servidor: ${error.message}`);
+  if (temNuvem) {
+    const { error } = await supabase.rpc('delete_my_data');
+    if (error) throw new Error(`nao foi possivel apagar no servidor: ${error.message}`);
+  }
 
   await limparTudo();
   await SecureStore.deleteItemAsync(CHAVE_UUID);
-  await supabase.auth.signOut();
+  if (temNuvem) await supabase.auth.signOut();
 }

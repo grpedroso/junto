@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
-import { supabase } from './supabase';
+import { supabase, temNuvem } from './supabase';
 import type { Tabelas } from '@/types/database';
 
 export const CHAVES = {
@@ -52,6 +52,7 @@ export async function enfileirar(
   tabela: TabelaSincronizavel,
   linha: Record<string, unknown>
 ): Promise<void> {
+  if (!temNuvem) return; // modo local: nao ha para onde sincronizar
   const fila = (await ler<Pendente[]>(CHAVES.fila)) ?? [];
   await gravar(CHAVES.fila, [
     ...fila,
@@ -71,7 +72,7 @@ let descarregando = false;
  * por exemplo) depende da linha completa ter passado antes.
  */
 export async function descarregar(): Promise<number> {
-  if (descarregando) return 0;
+  if (!temNuvem || descarregando) return 0;
   descarregando = true;
   try {
     const fila = (await ler<Pendente[]>(CHAVES.fila)) ?? [];

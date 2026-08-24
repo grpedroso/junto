@@ -33,21 +33,32 @@ notificações em background — está sendo validado antes do resto: veja
 
 ## Rodar
 
-Precisa de Node 20+, um aparelho Android físico e conta Expo.
+Precisa de Node 20+ e um celular Android.
 
 ```bash
 npm install
-cp .env.example .env      # preencha com as chaves do seu projeto Supabase
-npx expo start
+npx expo start          # aponte a câmera para o QR com o Expo Go aberto
 ```
 
-**Emulador não serve** para testar notificações, e o Expo Go também não: matar o
-Expo Go mata o agendamento junto. Para qualquer teste de notificação use um build
-de desenvolvimento:
+Sem `.env` o app sobe em **modo local**: a conta anônima é criada no próprio
+aparelho e nada sincroniza. Serve para navegar as telas e testar a regra de
+disparo antes de existir backend. Quando o projeto Supabase existir:
+
+```bash
+cp .env.example .env    # preencha URL e anon key
+npm run types:gen
+```
+
+**Para testar notificação, Expo Go não serve** — matar o Expo Go mata o
+agendamento junto, então o teste mede outra coisa. Use um build de
+desenvolvimento:
 
 ```bash
 npx eas build --platform android --profile development
 ```
+
+Emulador também não serve para notificação (o spike se recusa a validar em um).
+Para as demais telas, emulador está de bom tamanho.
 
 ### Testes
 
