@@ -77,7 +77,9 @@ Three consecutive days, without opening the app outside the check-in times.
 - [ ] Battery saver **on** — that is the real scenario, not the optimistic one
 - [ ] Device rebooted at the end of day 2, without reopening the app afterwards
 - [ ] No notification dismissed from the tray during the three days
-- [ ] Check: open the app at the end of day 3 and read "Deliveries per day"
+- [ ] Check: open the app at the end of day 3 and read "Deliveries per day".
+      The tally groups by the time each notification was *delivered*, not by when
+      the app was opened, so three days of a closed app still read as 3 + 3 + 3
 
 ### Pass criterion
 

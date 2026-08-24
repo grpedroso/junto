@@ -63,13 +63,22 @@ export default function App() {
   const [log, setLog] = useState<Event[]>([]);
   const subs = useRef<Notifications.EventSubscription[]>([]);
 
-  const record = useCallback(async (kind: Event['kind'], text: string) => {
-    const raw = await AsyncStorage.getItem(LOG_KEY);
-    const current: Event[] = raw ? JSON.parse(raw) : [];
-    const next = [{ ts: Date.now(), kind, text }, ...current].slice(0, 300);
-    await AsyncStorage.setItem(LOG_KEY, JSON.stringify(next));
-    setLog(next);
-  }, []);
+  /**
+   * `ts` is when the event *happened*, which for a tray sweep is when the
+   * notification was delivered -- not when the app was opened. The whole
+   * protocol keeps the app closed for three days, so stamping the sweep time
+   * would pile all nine deliveries onto day 3 and leave days 1 and 2 empty.
+   */
+  const record = useCallback(
+    async (kind: Event['kind'], text: string, ts: number = Date.now()) => {
+      const raw = await AsyncStorage.getItem(LOG_KEY);
+      const current: Event[] = raw ? JSON.parse(raw) : [];
+      const next = [{ ts, kind, text }, ...current].slice(0, 300);
+      await AsyncStorage.setItem(LOG_KEY, JSON.stringify(next));
+      setLog(next);
+    },
+    []
+  );
 
   // The device may deliver with the app dead -- no listener runs. The tray is
   // the only proof that survives: whatever is still there was truly delivered.
@@ -81,7 +90,8 @@ export default function App() {
     for (const n of fresh) {
       await record(
         'tray',
-        'delivered ' + stamp(n.date) + ' -- ' + (n.request.content.title ?? 'no title')
+        'delivered ' + stamp(n.date) + ' -- ' + (n.request.content.title ?? 'no title'),
+        n.date
       );
     }
     if (fresh.length) {
