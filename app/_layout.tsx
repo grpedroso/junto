@@ -1,6 +1,6 @@
 import '../global.css';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, AppState, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -25,7 +25,6 @@ export default function LayoutRaiz() {
   const carregando = useJunto((e) => e.carregando);
   const perfil = useJunto((e) => e.perfil);
   const iniciar = useJunto((e) => e.iniciar);
-  const jaRedirecionou = useRef(false);
 
   useEffect(() => {
     void iniciar();
@@ -55,16 +54,13 @@ export default function LayoutRaiz() {
     return () => sub.remove();
   }, [router]);
 
+  // So o caminho de ida e automatico. A volta quem faz e o fim do onboarding,
+  // porque as telas de la sao reaproveitadas depois -- o PGSI de 30 dias entra
+  // por `/(onboarding)/pgsi` com o onboarding ja concluido.
   useEffect(() => {
     if (carregando) return;
-    const noOnboarding = segmentos[0] === '(onboarding)';
-    const precisa = !perfil?.onboardingFeito;
-
-    if (precisa && !noOnboarding) {
+    if (!perfil?.onboardingFeito && segmentos[0] !== '(onboarding)') {
       router.replace('/(onboarding)');
-    } else if (!precisa && noOnboarding && !jaRedirecionou.current) {
-      jaRedirecionou.current = true;
-      router.replace('/(tabs)');
     }
   }, [carregando, perfil?.onboardingFeito, segmentos, router]);
 
