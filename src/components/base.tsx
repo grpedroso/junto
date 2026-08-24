@@ -7,8 +7,16 @@ type ChildrenOnly = { children: ReactNode; className?: string };
 export function Screen({ children, className = '' }: ChildrenOnly) {
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={['top', 'bottom']}>
+      {/*
+        `grow` is not decoration. A ScrollView's content container sizes itself
+        to its content, so a child with `flex-1` has no height to fill and the
+        `justify-center` on it does nothing at all. Without this every onboarding
+        screen -- all of which ask to be vertically centred -- renders glued to
+        the top, and the Continue button floats right under the text instead of
+        sitting at the bottom.
+      */}
       <ScrollView
-        contentContainerClassName={`px-5 pt-4 pb-10 gap-4 ${className}`}
+        contentContainerClassName={`grow px-5 pt-4 pb-10 gap-4 ${className}`}
         keyboardShouldPersistTaps="handled"
       >
         {children}

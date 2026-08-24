@@ -32,7 +32,7 @@ export default function ChooseTimes() {
         <Body>{t('onboarding.times_text')}</Body>
       </View>
 
-      <View className="flex-1 gap-3">
+      <View className="flex-1 justify-center gap-3">
         {times.map((time, i) => (
           <Card key={i} className="flex-row items-center justify-between">
             <Nudge label="−" onPress={() => shift(i, -1)} />

@@ -76,6 +76,12 @@ is what keeps the screens walkable in Expo Go. Scheduling still needs a real
 build: killing Expo Go kills the alarms with it. See
 [NOTIFICATIONS.md](NOTIFICATIONS.md).
 
+**`flex-1` does nothing inside a ScrollView without `grow`.** The content
+container sizes to its content, so the child has no height to fill and
+`justify-center` is inert. `Screen` in `src/components/base.tsx` sets `grow` for
+exactly this reason — remove it and the whole onboarding silently sticks to the
+top of the screen.
+
 **Jitter requires a concrete date.** Android's daily trigger is a fixed hour, so
 `scheduleEmas` schedules 21 days of concrete dates and reschedules on every open
 — which is also why scheduling dies if the app is never opened again.
