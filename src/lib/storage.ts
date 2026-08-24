@@ -8,7 +8,9 @@ export const CHAVES = {
   emas: 'junto:emas',
   planos: 'junto:planos',
   fila: 'junto:fila',
+  intervencoes: 'junto:intervencoes',
   adiada: 'junto:adiada',
+  cuidadoVisto: 'junto:cuidado_visto',
 } as const;
 
 export async function ler<T>(chave: string): Promise<T | null> {
@@ -32,6 +34,7 @@ type TabelaSincronizavel = keyof Pick<
 >;
 
 type Pendente = {
+  id: string;
   tabela: TabelaSincronizavel;
   linha: Record<string, unknown>;
   criadoEm: string;
@@ -50,13 +53,23 @@ export async function enfileirar(
   linha: Record<string, unknown>
 ): Promise<void> {
   const fila = (await ler<Pendente[]>(CHAVES.fila)) ?? [];
-  await gravar(CHAVES.fila, [...fila, { tabela, linha, criadoEm: new Date().toISOString() }]);
+  await gravar(CHAVES.fila, [
+    ...fila,
+    { id: novoId(), tabela, linha, criadoEm: new Date().toISOString() },
+  ]);
   void descarregar();
 }
 
 let descarregando = false;
 
-/** Retorna quantos itens sairam da fila. Nunca lanca -- sem rede e o normal. */
+/**
+ * Retorna quantos itens sairam da fila. Nunca lanca -- sem rede e o normal.
+ *
+ * A fila e relida no fim e filtrada pelo id do que saiu, em vez de sobrescrita
+ * com o que sobrou: uma escrita nova que chegue durante o envio seria perdida
+ * pela sobrescrita, e a ordem importa porque um upsert parcial (o follow-up,
+ * por exemplo) depende da linha completa ter passado antes.
+ */
 export async function descarregar(): Promise<number> {
   if (descarregando) return 0;
   descarregando = true;
@@ -64,17 +77,21 @@ export async function descarregar(): Promise<number> {
     const fila = (await ler<Pendente[]>(CHAVES.fila)) ?? [];
     if (fila.length === 0) return 0;
 
-    const sobraram: Pendente[] = [];
-    let enviados = 0;
-
+    const enviados: string[] = [];
     for (const item of fila) {
       const { error } = await supabase.from(item.tabela).upsert(item.linha as never);
-      if (error) sobraram.push(item);
-      else enviados++;
+      if (error) break; // manter a ordem: parar no primeiro que falhar
+      enviados.push(item.id);
     }
 
-    await gravar(CHAVES.fila, sobraram);
-    return enviados;
+    if (enviados.length) {
+      const atual = (await ler<Pendente[]>(CHAVES.fila)) ?? [];
+      await gravar(
+        CHAVES.fila,
+        atual.filter((i) => !enviados.includes(i.id))
+      );
+    }
+    return enviados.length;
   } catch {
     return 0;
   } finally {
